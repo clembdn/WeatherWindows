@@ -28,3 +28,13 @@ private struct RainAfter: RainField {
     #expect(field.weight(at: anywhere, time: start.addingTimeInterval(-15 * 60)) == 1)
     #expect(field.weight(at: anywhere, time: start.addingTimeInterval(-16 * 60)) == 0)
 }
+
+@Test func buildsFiveRobustnessScenarios() {
+    let start = Date(timeIntervalSince1970: 0)
+    let scenarios = ShiftedRainField.scenarios(around: RainAfter(start: start))
+    let anywhere = GeoPoint(latitude: 0, longitude: 0)
+
+    #expect(scenarios.count == 5)
+    #expect(scenarios[0].weight(at: anywhere, time: start) == 1)
+    #expect(scenarios.map { $0.weight(at: anywhere, time: start.addingTimeInterval(-20 * 60)) } == [0, 1, 0, 0, 0])
+}

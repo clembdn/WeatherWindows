@@ -15,12 +15,12 @@ Read by `./ww status`. Tick a box only when it is really true. Part headings use
 Tests: geoPointRoundTripsThroughJSON, melbourneTimeZoneIsAvailable, paletteMapsUniversalBlueColors, decodesRecordedTile, undoesEveryRowFilter
 
 ## Part 1 — SolverKit · Linux · due 2026-10-06
-- [ ] Solver types: Stop, Node, PlanRequest, ScoredSchedule, SolveOutcome
-- [ ] Day simulation with waiting before opening and rejection after closing
-- [ ] Per-minute leg sampling and exposure score
-- [ ] Robust score over shifted scenarios (−30, −15, 0, +15, +30 min)
-- [ ] Pareto frontier, duration measured from the start of the window
-- [ ] Two hand-computed reference cases from P6
+- [x] Solver types: Stop, Node, PlanRequest, ScoredSchedule, SolveOutcome
+- [x] Day simulation with waiting before opening and rejection after closing
+- [x] Per-minute leg sampling and exposure score
+- [x] Robust score over shifted scenarios (−30, −15, 0, +15, +30 min)
+- [x] Pareto frontier, duration measured from the start of the window
+- [x] Two hand-computed reference cases (documented as tables in the tests)
 Tests: waitsWhenArrivingBeforeOpening, rejectsTaskEndingAfterClosing, splitsLegAcrossHourBoundary, enumeratesAllOrders, dryForecastGivesZeroExposure, robustScoreIsWorstScenario, paretoDropsDominated, reportsWhyNothingFits, handComputedCaseA, handComputedCaseB
 
 ## Part 2a — ForecastKit · Linux · due 2026-10-06
