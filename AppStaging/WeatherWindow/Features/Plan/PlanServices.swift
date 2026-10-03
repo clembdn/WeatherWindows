@@ -13,6 +13,8 @@ struct PlanServices {
     var hourlyForecast: (_ point: GeoPoint) async throws -> [WeatherSample]
     /// The latest radar frames at or before a time, oldest first.
     var radarFrames: (_ time: Date) async throws -> [RadarFrame] = { _ in [] }
+    /// The path drawn on the map for one walk; a straight line unless Apple Maps provides one.
+    var routeLine: (_ from: GeoPoint, _ to: GeoPoint) async -> [GeoPoint] = { [$0, $1] }
 
     /// Frames used to measure motion: three pairs.
     static let radarFrameCount = 4
@@ -29,7 +31,8 @@ struct PlanServices {
                 return try await builder.walkingTimes(start: start, end: end, stops: stops).walkingTimes
             },
             hourlyForecast: { point in try await OpenMeteoService().hourlyForecast(at: point) },
-            radarFrames: { time in try await LiveRainViewerSource.shared.frames(upTo: time, count: radarFrameCount) }
+            radarFrames: { time in try await LiveRainViewerSource.shared.frames(upTo: time, count: radarFrameCount) },
+            routeLine: { from, to in await RouteService().walkingLine(from: from, to: to) }
         )
     }
 

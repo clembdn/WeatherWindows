@@ -26,6 +26,9 @@ struct PlanResult {
     let window: ClosedRange<Date>
     let stops: [Stop]
     let errandIDs: [UUID: PersistentIdentifier]
+    /// The forecast and its shifted copies the plans were scored against.
+    let scenarios: [any RainField]
+    let routeLine: (GeoPoint, GeoPoint) async -> [GeoPoint]
 
     var frontier: [ScoredSchedule] {
         if case .frontier(let schedules) = outcome { return schedules }
@@ -156,11 +159,13 @@ final class DayPlanViewModel {
                 walkingTimes: walkingTimes,
                 timeZone: AppClock.timeZone
             )
-            let outcome = await Self.rankSchedules(request, scenarios: ShiftedRainField.scenarios(around: forecast))
+            let scenarios = ShiftedRainField.scenarios(around: forecast)
+            let outcome = await Self.rankSchedules(request, scenarios: scenarios)
 
             state = .loaded(PlanResult(
                 outcome: outcome, start: start, end: end, endsAtStart: endsAtStart,
-                window: window, stops: stops, errandIDs: errandIDs
+                window: window, stops: stops, errandIDs: errandIDs,
+                scenarios: scenarios, routeLine: services.routeLine
             ))
         } catch is CancellationError {
             state = .idle

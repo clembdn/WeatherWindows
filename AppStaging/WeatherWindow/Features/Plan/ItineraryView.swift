@@ -1,6 +1,7 @@
 import SolverKit
 import SwiftData
 import SwiftUI
+import UIKit
 
 /// The chosen schedule step by step: each walk with its rain, each errand with arrival, wait and departure.
 struct ItineraryView: View {
@@ -9,7 +10,10 @@ struct ItineraryView: View {
     let schedule: ScoredSchedule
 
     @Environment(\.modelContext) private var context
+    @Environment(NotificationService.self) private var notifications
+    @Environment(\.openURL) private var openURL
     @State private var isSaved = false
+    @State private var reminderMessage: String?
     @State private var saveErrorMessage: String?
 
     var body: some View {
@@ -19,6 +23,24 @@ struct ItineraryView: View {
                 LabeledContent("Back", value: AppClock.time(schedule.returnTime))
                 LabeledContent("Time out", value: PlanText.duration(schedule.returnTime.timeIntervalSince(schedule.departure)))
                 RainBadge(exposure: schedule.robustExposure)
+                Button("Remind Me to Leave at \(AppClock.time(schedule.departure))", systemImage: "bell") {
+                    Task { await remind() }
+                }
+                if let reminderMessage {
+                    Text(reminderMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                if notifications.isDenied {
+                    Button("Turn On Notifications in Settings", systemImage: "gear") {
+                        if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                    }
+                }
+            }
+
+            Section {
+                RouteMapView(result: result, schedule: schedule)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
             }
 
             Section("Steps") {
@@ -60,6 +82,19 @@ struct ItineraryView: View {
         }
         .navigationTitle("Itinerary")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// One reminder per plan: scheduling again replaces it instead of adding a second one.
+    private func remind() async {
+        let scheduled = await notifications.scheduleReminder(
+            id: "plan-\(schedule.id)",
+            at: schedule.departure,
+            title: "Time to leave",
+            body: "Leave now for \(schedule.order.map(\.name).joined(separator: ", ")). \(PlanText.rain(schedule.robustExposure))."
+        )
+        reminderMessage = scheduled
+            ? "Reminder set for \(AppClock.time(schedule.departure))."
+            : "Notifications are off, so no reminder was set."
     }
 
     private func save() {

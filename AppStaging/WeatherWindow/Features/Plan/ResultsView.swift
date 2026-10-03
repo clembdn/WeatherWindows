@@ -4,6 +4,11 @@ import SwiftUI
 /// The best trade-offs between time and rain, or why no plan fits.
 struct ResultsView: View {
     let result: PlanResult
+    @State private var selectedID: String?
+
+    private var selected: ScoredSchedule? {
+        selectedID.flatMap(result.schedule(withID:)) ?? result.fastest
+    }
 
     var body: some View {
         Group {
@@ -31,6 +36,29 @@ struct ResultsView: View {
                         }
                     }
 
+                    if schedules.count > 1 {
+                        Section {
+                            TradeOffChart(schedules: schedules, selectedID: $selectedID)
+                                .padding(.vertical, 8)
+                        } header: {
+                            Text("Time vs Rain")
+                        } footer: {
+                            Text("Each point is a plan that no other plan beats on both time and rain. Tap one to see it.")
+                        }
+                    }
+
+                    if let selected {
+                        Section {
+                            RouteMapView(result: result, schedule: selected)
+                                .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
+                            NavigationLink(value: PlanRoute.itinerary(scheduleID: selected.id)) {
+                                ScheduleRow(schedule: selected)
+                            }
+                        } header: {
+                            Text("Selected Plan")
+                        }
+                    }
+
                     Section {
                         ForEach(schedules) { schedule in
                             NavigationLink(value: PlanRoute.itinerary(scheduleID: schedule.id)) {
@@ -39,8 +67,6 @@ struct ResultsView: View {
                         }
                     } header: {
                         Text("All Trade-offs")
-                    } footer: {
-                        Text("No plan in this list is both faster and drier than another.")
                     }
                 }
             }

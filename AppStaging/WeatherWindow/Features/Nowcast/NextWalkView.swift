@@ -67,7 +67,7 @@ struct NextWalkView: View {
         .task {
             while !Task.isCancelled {
                 await model.load(services: services)
-                try? await Task.sleep(for: .minutes(10))
+                try? await Task.sleep(for: .seconds(10 * 60))
             }
         }
     }

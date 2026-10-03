@@ -55,9 +55,12 @@ Tests: addsErrand, rejectsDuplicateNameIgnoringCaseAccentsAndSpaces, deletingPla
 Tests: refusesAFifthErrand, calculatesAFrontierWithFakeServices, reportsAnOfflineForecast, switchesToAChosenStartWhenLocationIsDenied, explainsWhichErrandClosesTooEarly, savesTheChosenScheduleWithCopiedStops
 
 ## Part 4 — Chart, map, notification · Mac 2–3 · due 2026-10-21
+- [ ] Chart, route map and reminders written in AppStaging/, compiled and screenshotted by CI
 - [ ] Trade-off chart with tap selection and a VoiceOver label per point
 - [ ] Route map: real polylines, rainy legs coloured, dashed and labelled
 - [ ] Departure notification: permission on first tap, Settings link on refusal
+- [ ] All three checked in the simulator (notification shows, rainy stretch readable without colour)
+Tests: slicesAThirdOfARoute, groupsRainyMinutesIntoSegments
 
 ## Part 5 — NowcastKit · Linux · due 2026-10-20
 - [x] Radar PNG decoder shared by Linux tests and the app
@@ -71,10 +74,13 @@ Tests: refusesAFifthErrand, calculatesAFrontierWithFakeServices, reportsAnOfflin
 Tests: georeferencesMelbourneCBD, convertsReflectivityToRainRate, recoversUniformShift, zeroMotionKeepsFrame, predictsMovingDisc, fallsBackToGlobalVector, csiBounds, beatsPersistenceOnRecordedDay
 
 ## Part 6 — Nowcast in the app · Mac 3 · due 2026-10-21
-- [ ] LiveRainViewerSource and NowcastService actor, stale radar falls back to the forecast
+- [ ] Nowcast screens written in AppStaging/, tested and screenshotted by CI (replay)
+- [x] RecordedFrameSource, NowcastEngine (stale radar detected) and DepartureAdvisor in the package
+- [ ] LiveRainViewerSource actor checked against live radar in the simulator
 - [ ] Departure advice card (go now or wait) with reminder
-- [ ] Collision view (MKMapView overlay, or Canvas plan B) with time scrubber
-- [ ] Replay mode with a permanent banner
+- [ ] Collision view (Canvas, plan B) with time scrubber; MKMapView overlay if time allows
+- [ ] Replay mode with a permanent banner, demo works offline
+Tests: recordedSourceReturnsFramesUpToTheReplayTime, engineBuildsThirtyMinutesAroundTheRoute, engineRefusesStaleRadar, advisesWaitingForTheShowerToPass, advisesLeavingNowWhenDry, waitingNeverMissesClosingTime, adviceExplainsWhenNothingFits, advisesFromTheRecordedRadar, fallsBackToTheForecastWhenRadarIsStale
 
 ## Part 7 — Finish · Mac 4–5 · due 2026-11-04
 - [ ] About screen complete: identity, data credits, methods, AI statement
