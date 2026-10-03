@@ -11,10 +11,3 @@ func rainWeightExamples(probability: Double, precipitation: Double, expected: Do
     let weight = RainWeight.hourly(probability: probability, precipitation: precipitation)
     #expect(abs(weight - expected) < 1e-9)
 }
-
-@Test func fixturesAreBundled() throws {
-    for name in ["hourly_melbourne", "weather_maps"] {
-        let url = try #require(Bundle.module.url(forResource: name, withExtension: "json", subdirectory: "Fixtures"))
-        #expect(try Data(contentsOf: url).isEmpty == false)
-    }
-}

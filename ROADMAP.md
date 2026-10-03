@@ -26,9 +26,9 @@ Tests: waitsWhenArrivingBeforeOpening, rejectsTaskEndingAfterClosing, splitsLegA
 ## Part 2a — ForecastKit · Linux · due 2026-10-06
 - [x] Real Open-Meteo and RainViewer responses saved as fixtures
 - [x] RainViewerMaps decoding and tile URL
-- [ ] OpenMeteoHourlyResponse with a hand-written init(from:) zipping the parallel arrays
-- [ ] Open-Meteo URL built with URLComponents (timeformat=unixtime)
-- [ ] HourlyRainField conforming to RainField
+- [x] OpenMeteoHourlyResponse with a hand-written init(from:) zipping the parallel arrays
+- [x] Open-Meteo URL built with URLComponents (timeformat=unixtime)
+- [x] HourlyRainField conforming to RainField
 Tests: decodesHourlyFixture, toleratesNullValues, rejectsMismatchedArrays, rainWeightExamples, buildsTileURL
 
 ## Part 2b — Data and services · Mac 1 · due 2026-10-07
