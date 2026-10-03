@@ -9,6 +9,7 @@ let usage = """
       record [--out D]  Download new RainViewer frames into recordings/ (run by cron every 30 min)
       sync-radar        Import the frames saved by the hourly GitHub backup workflow
       screenshots       Download the latest app screenshots taken by CI into screenshots/
+      verify [day…]     Replay recorded radar: nowcast vs persistence (CSI) at 10, 20 and 30 min
     """
 
 func repositoryRoot() throws -> URL {
@@ -65,6 +66,11 @@ do {
         let summary = try ScreenshotDownloader(repository: root).download()
         print("Screenshots from run \(summary.runID) “\(summary.title)”:")
         summary.files.forEach { print("  \(summary.folder.path)/\($0)") }
+
+    case "verify":
+        let store = RecordingStore(root: root.appending(path: "recordings"))
+        let rows = try NowcastReport(store: store).run(days: Array(arguments.dropFirst()))
+        print(NowcastReport.render(rows))
 
     default:
         print(usage)

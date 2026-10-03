@@ -7,4 +7,10 @@ public enum ReflectivityConverter {
         let z = pow(10, dBZ / 10)
         return pow(z / 200, 1 / 1.6)
     }
+
+    /// Rain weight in 0...1, saturating at 1 mm/h like the hourly forecast; no echo is dry.
+    public static func rainWeight(dBZ: Double) -> Double {
+        guard dBZ > Double(ReflectivityPalette.noEchoDBZ) else { return 0 }
+        return min(1, rainRate(dBZ: dBZ))
+    }
 }

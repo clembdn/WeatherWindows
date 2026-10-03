@@ -61,12 +61,13 @@ Tests: refusesAFifthErrand, calculatesAFrontierWithFakeServices, reportsAnOfflin
 
 ## Part 5 — NowcastKit · Linux · due 2026-10-20
 - [x] Radar PNG decoder shared by Linux tests and the app
-- [ ] RainGrid with tile, time and bilinear sampling
-- [ ] Georeference (spherical Mercator)
-- [ ] Block matching motion estimator with median filter and global fallback
-- [ ] Semi-Lagrangian advection to 30 min on the cropped area
-- [ ] NowcastRainField blended with the hourly forecast
-- [ ] Verifier: nowcast beats persistence at 20 min on a recorded day
+- [x] RainGrid with bilinear sampling, RadarFrame with tile and time
+- [x] Georeference (spherical Mercator)
+- [x] Block matching motion estimator with median filter and global fallback
+- [x] Semi-Lagrangian advection to 30 min on the cropped area
+- [x] NowcastRainField blended with the hourly forecast
+- [x] Verifier: nowcast beats persistence at 20 min on a recorded day
+- [x] ./ww verify replays every recorded day (CSI nowcast vs persistence at 10, 20, 30 min)
 Tests: georeferencesMelbourneCBD, convertsReflectivityToRainRate, recoversUniformShift, zeroMotionKeepsFrame, predictsMovingDisc, fallsBackToGlobalVector, csiBounds, beatsPersistenceOnRecordedDay
 
 ## Part 6 — Nowcast in the app · Mac 3 · due 2026-10-21
