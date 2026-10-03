@@ -9,7 +9,7 @@ Read by `./ww status`. Tick a box only when it is really true. Part headings use
 - [x] Radar PNG decoder in pure Swift, identical to Pillow on a real tile
 - [x] Swift tools: ww record, ww sync-radar, ww status
 - [x] CI workflows written: Kit (Linux), Apple, Radar backup
-- [ ] CI green on GitHub, Linux and macOS
+- [x] CI green on GitHub, Linux and macOS
 - [x] Radar cron running every 30 minutes
 - [ ] At least one full rainy day recorded near the CBD
 Tests: geoPointRoundTripsThroughJSON, melbourneTimeZoneIsAvailable, paletteMapsUniversalBlueColors, decodesRecordedTile, undoesEveryRowFilter

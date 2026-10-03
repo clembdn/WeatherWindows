@@ -18,7 +18,7 @@ jobs:
       - uses: actions/cache@v6
         with:
           path: Tools/.build
-          key: radar-tools-6.3.3-${{ hashFiles('Tools/**/*.swift', 'WeatherWindowKit/Package.swift', 'WeatherWindowKit/Sources/**') }}
+          key: radar-tools-6.3.3-${{ hashFiles('Tools/Package.swift', 'Tools/Sources/**', 'WeatherWindowKit/Package.swift', 'WeatherWindowKit/Sources/**') }}
       - run: swift build -c release --package-path Tools
       - run: "$(swift build -c release --show-bin-path --package-path Tools)/ww record --out recordings"
       - uses: actions/upload-artifact@v7
