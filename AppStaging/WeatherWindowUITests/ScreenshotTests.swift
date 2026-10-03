@@ -1,7 +1,7 @@
 import XCTest
 
 /// Captures the main screens in light, dark and the largest text size; CI exports them as an artifact.
-final class ScreenshotTests: XCTestCase {
+nonisolated final class ScreenshotTests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
     }
