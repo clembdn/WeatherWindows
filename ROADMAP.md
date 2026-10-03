@@ -32,7 +32,7 @@ Tests: waitsWhenArrivingBeforeOpening, rejectsTaskEndingAfterClosing, splitsLegA
 Tests: decodesHourlyFixture, toleratesNullValues, rejectsMismatchedArrays, rainWeightExamples, buildsTileURL
 
 ## Part 2b — Data and services · Mac 1 · due 2026-10-07
-- [ ] App sources for Mac 1 written in AppStaging/, compiled and tested by CI on iOS
+- [x] App sources for Mac 1 written in AppStaging/, compiled and tested by CI on iOS
 - [ ] Xcode project (iOS 18, Swift Testing), local package added, concurrency settings checked
 - [ ] NSLocationWhenInUseUsageDescription set
 - [ ] SwiftData models: SavedErrand, DayPlan, PlannedStop, CachedWalkingTime

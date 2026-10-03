@@ -9,9 +9,15 @@ struct WeatherWindowApp: App {
 
     init() {
         do {
-            container = try ModelContainer(for: SavedErrand.self, DayPlan.self, PlannedStop.self, CachedWalkingTime.self)
+            container = try ModelContainer(
+                for: SavedErrand.self, DayPlan.self, PlannedStop.self, CachedWalkingTime.self,
+                configurations: ModelConfiguration(isStoredInMemoryOnly: LaunchOption.usesSampleData)
+            )
         } catch {
             fatalError("The WeatherWindow database could not be opened: \(error)")
+        }
+        if LaunchOption.usesSampleData {
+            SampleData.insert(into: container.mainContext)
         }
         _errandStore = State(initialValue: ErrandStore(context: container.mainContext))
     }

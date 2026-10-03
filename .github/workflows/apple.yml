@@ -69,4 +69,17 @@ jobs:
             -project WeatherWindow/WeatherWindow.xcodeproj \
             -scheme WeatherWindow \
             -destination "$SIMULATOR" \
+            -resultBundlePath "$RUNNER_TEMP/app.xcresult" \
             CODE_SIGNING_ALLOWED=NO
+
+      - name: Export screenshots
+        if: always() && steps.project.outputs.exists == 'true'
+        run: xcrun xcresulttool export attachments --path "$RUNNER_TEMP/app.xcresult" --output-path screenshots
+
+      - uses: actions/upload-artifact@v7
+        if: always() && steps.project.outputs.exists == 'true'
+        with:
+          name: screenshots
+          path: screenshots/
+          retention-days: 30
+          if-no-files-found: warn
