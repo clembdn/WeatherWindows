@@ -6,13 +6,17 @@ public protocol RadarFrameSource: Sendable {
     func frames(upTo time: Date, count: Int) async throws -> [RadarFrame]
 }
 
-/// Recorded PNG tiles whose file names contain their Unix capture time (`1790989200.png`, `replay-1790989200.png`).
+/// Recorded PNG tiles whose file names contain their Unix capture time (`1790989200.png`, `replay-1790989200.tile`).
+/// Tiles shipped inside an iOS app use the `.tile` extension so Xcode copies them untouched instead of
+/// converting them to Apple's premultiplied CgBI PNG variant.
 public struct RecordedFrameSource: RadarFrameSource {
+    public static let fileExtensions: Set<String> = ["png", "tile"]
+
     public let files: [URL]
     public let decoder: RadarTileDecoder
 
     public init(files: [URL], decoder: RadarTileDecoder) {
-        self.files = files.filter { $0.pathExtension == "png" && Self.captureTime(of: $0) != nil }
+        self.files = files.filter { Self.fileExtensions.contains($0.pathExtension) && Self.captureTime(of: $0) != nil }
         self.decoder = decoder
     }
 

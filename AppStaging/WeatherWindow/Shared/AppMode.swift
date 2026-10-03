@@ -38,7 +38,7 @@ nonisolated enum ReplaySession {
 
     /// Radar tiles from 10:30 to 11:30; only those up to `now` are ever used for a forecast.
     static var frameFiles: [URL] {
-        (AppResources.bundle.urls(forResourcesWithExtension: "png", subdirectory: nil) ?? [])
+        (AppResources.bundle.urls(forResourcesWithExtension: "tile", subdirectory: nil) ?? [])
             .filter { $0.lastPathComponent.hasPrefix("replay-") }
     }
 

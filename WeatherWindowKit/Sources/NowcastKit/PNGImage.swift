@@ -9,10 +9,18 @@ public struct PNGImage: Sendable {
     public let rgba: [UInt8]
 
     /// Why a PNG could not be decoded.
-    public enum DecodingError: Error, Equatable {
+    public enum DecodingError: LocalizedError, Equatable {
         case notPNG
         case unsupportedFormat
         case corruptData
+
+        public var errorDescription: String? {
+            switch self {
+            case .notPNG: "The radar image is not a PNG file."
+            case .unsupportedFormat: "The radar image uses a PNG format WeatherWindow cannot read."
+            case .corruptData: "The radar image is damaged or was re-compressed."
+            }
+        }
     }
 
     private static let signature: [UInt8] = [137, 80, 78, 71, 13, 10, 26, 10]
