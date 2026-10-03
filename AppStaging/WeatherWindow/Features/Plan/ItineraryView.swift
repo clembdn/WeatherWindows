@@ -37,6 +37,12 @@ struct ItineraryView: View {
             }
 
             Section {
+                NavigationLink {
+                    NextWalkView(input: NextWalkInput(current: result.start, remaining: schedule.order, end: result.end))
+                } label: {
+                    Label("Check the Radar Before Leaving", systemImage: "cloud.sun.rain")
+                }
+                .accessibilityIdentifier("check-radar")
                 ForecastNotice()
             }
 

@@ -57,6 +57,12 @@ nonisolated final class ScreenshotTests: XCTestCase {
             tap(app.buttons["plan-card"].firstMatch)
             XCTAssertTrue(app.navigationBars["Itinerary"].waitForExistence(timeout: 10), "Itinerary never appeared")
             capture(app, "\(prefix)-6-itinerary")
+
+            tap(app.buttons["check-radar"])
+            XCTAssertTrue(app.otherElements["Rain map"].waitForExistence(timeout: 30)
+                          || app.staticTexts["Nothing Fits Any More"].waitForExistence(timeout: 5),
+                          "Radar advice never appeared")
+            capture(app, "\(prefix)-7-next-walk")
         }
 
         app.terminate()

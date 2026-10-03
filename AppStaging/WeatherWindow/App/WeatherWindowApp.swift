@@ -6,6 +6,7 @@ struct WeatherWindowApp: App {
     private let container: ModelContainer
     @State private var errandStore: ErrandStore
     @State private var locationService = LocationService()
+    @State private var notificationService = NotificationService()
 
     init() {
         do {
@@ -27,6 +28,7 @@ struct WeatherWindowApp: App {
             RootView()
                 .environment(errandStore)
                 .environment(locationService)
+                .environment(notificationService)
         }
         .modelContainer(container)
     }

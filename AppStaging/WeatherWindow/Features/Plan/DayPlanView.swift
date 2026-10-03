@@ -9,6 +9,7 @@ struct DayPlanView: View {
     @Query(sort: \SavedErrand.name) private var errands: [SavedErrand]
     @Query(sort: \DayPlan.date, order: .reverse) private var savedPlans: [DayPlan]
     @AppStorage(SettingsKey.paceFactor) private var paceFactor = 1.0
+    @AppStorage(AppMode.replayKey) private var replaySetting = false
     @State private var model = DayPlanViewModel()
     @State private var path = NavigationPath()
 
@@ -36,6 +37,9 @@ struct DayPlanView: View {
             }
             .navigationDestination(for: DayPlan.self) { plan in
                 SavedPlanView(plan: plan)
+            }
+            .onChange(of: AppMode.isReplay(setting: replaySetting), initial: true) { _, isReplay in
+                model = DayPlanViewModel(now: AppMode.now(isReplay: isReplay))
             }
         }
     }
@@ -187,9 +191,8 @@ struct DayPlanView: View {
     }
 
     private func calculate() async {
-        let services = LaunchOption.usesSampleData
-            ? PlanServices.sample()
-            : PlanServices.live(context: context, location: location, paceFactor: paceFactor)
+        let services = PlanServices.current(isReplay: AppMode.isReplay(setting: replaySetting),
+                                            context: context, location: location, paceFactor: paceFactor)
         await model.calculate(errands: selectedErrands, services: services)
         if model.result != nil {
             path.append(PlanRoute.results)

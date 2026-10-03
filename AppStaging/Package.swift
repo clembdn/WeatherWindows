@@ -23,6 +23,7 @@ let package = Package(
             name: "WeatherWindow",
             dependencies: [.product(name: "WeatherWindowKit", package: "WeatherWindowKit")],
             path: "WeatherWindow",
+            resources: [.process("Resources")],
             swiftSettings: appSettings
         ),
         .testTarget(

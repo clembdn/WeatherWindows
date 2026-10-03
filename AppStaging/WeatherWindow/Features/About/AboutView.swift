@@ -3,6 +3,7 @@ import SwiftUI
 /// Identity, data credits and settings.
 struct AboutView: View {
     @AppStorage(SettingsKey.paceFactor) private var paceFactor = 1.0
+    @AppStorage(AppMode.replayKey) private var replaySetting = false
 
     private var version: String {
         let info = Bundle.main.infoDictionary
@@ -44,6 +45,12 @@ struct AboutView: View {
                     Text("Settings")
                 } footer: {
                     Text("Apple Maps assumes a fixed walking speed. Move right if you usually walk slower.")
+                }
+
+                Section {
+                    Toggle("Replay a recorded rainy morning", isOn: $replaySetting)
+                } footer: {
+                    Text("Uses the radar and forecast recorded on 3 October 2026 with a frozen clock, and straight-line walking times. Works offline.")
                 }
 
                 Section("Data") {

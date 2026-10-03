@@ -152,3 +152,47 @@ private func rainCentre(_ grid: RainGrid) -> (x: Double, y: Double)? {
     #expect(evaluation.cases >= 25)
     #expect(nowcast > persistence, "nowcast CSI \(nowcast) vs persistence \(persistence)")
 }
+
+// MARK: - Engine and replay
+
+@Test func recordedSourceReturnsFramesUpToTheReplayTime() async throws {
+    let source = try recordedSource()
+
+    let frames = try await source.frames(upTo: Date(timeIntervalSince1970: 1_790_986_200), count: 3)
+
+    #expect(frames.map { Int($0.time.timeIntervalSince1970) } == [1_790_985_000, 1_790_985_600, 1_790_986_200])
+}
+
+@Test func engineBuildsThirtyMinutesAroundTheRoute() async throws {
+    let frames = try await recordedSource().frames(upTo: Date(timeIntervalSince1970: 1_790_989_800), count: 4)
+    let cbd = GeoPoint(latitude: -37.8136, longitude: 144.9631)
+
+    let outcome = NowcastEngine.make(frames: frames, around: [cbd], now: Date(timeIntervalSince1970: 1_790_990_400),
+                                     fallback: ConstantRain(weight: 0))
+
+    guard case .ready(let nowcast) = outcome else {
+        Issue.record("Expected a nowcast")
+        return
+    }
+    #expect(nowcast.forecast.count == 30)
+    #expect(nowcast.region.minX <= 278 && nowcast.region.maxX >= 278)
+    #expect(nowcast.lastObservation == Date(timeIntervalSince1970: 1_790_989_800))
+}
+
+@Test func engineRefusesStaleRadar() async throws {
+    let frames = try await recordedSource().frames(upTo: Date(timeIntervalSince1970: 1_790_989_800), count: 4)
+
+    let outcome = NowcastEngine.make(frames: frames, around: [], now: Date(timeIntervalSince1970: 1_790_989_800 + 31 * 60),
+                                     fallback: ConstantRain(weight: 0))
+
+    guard case .stale(let last) = outcome else {
+        Issue.record("Expected stale radar")
+        return
+    }
+    #expect(last == Date(timeIntervalSince1970: 1_790_989_800))
+}
+
+private func recordedSource() throws -> RecordedFrameSource {
+    let folder = try #require(Bundle.module.url(forResource: "recorded", withExtension: nil, subdirectory: "Fixtures"))
+    return try RecordedFrameSource(folder: folder, decoder: RadarTileDecoder(palette: try .universalBlue()))
+}

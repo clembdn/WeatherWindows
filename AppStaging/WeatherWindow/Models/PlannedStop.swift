@@ -47,4 +47,15 @@ final class PlannedStop {
     var location: GeoPoint {
         GeoPoint(latitude: latitude, longitude: longitude)
     }
+
+    /// The solver's view of this stop, for re-planning the rest of the day.
+    func makeStop() -> Stop {
+        Stop(
+            name: name,
+            location: location,
+            serviceDuration: TimeInterval(durationMinutes * 60),
+            openingMinute: openingMinute,
+            closingMinute: closingMinute
+        )
+    }
 }

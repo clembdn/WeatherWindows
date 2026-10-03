@@ -176,6 +176,50 @@ import WeatherWindowCore
     #expect(reason(outcome) == .missingWalkingTime(from: .stop(post.id), to: .end))
 }
 
+// MARK: - Departure advice
+
+@Test func advisesWaitingForTheShowerToPass() throws {
+    let post = Stop(name: "Post", location: postPlace, serviceDuration: 10 * 60, openingMinute: 9 * 60, closingMinute: 17 * 60)
+    let request = makeRequest(stops: [post], minutesFromHome: [post.id: 10], window: at(14, 0)...at(14, 30))
+
+    let advice = DepartureAdvisor.advice(for: request, scenarios: [RainBetween(start: at(14, 0), end: at(14, 15))])
+
+    #expect(advice.recommendsWaiting)
+    #expect(advice.leaveNow?.robustExposure == 10)
+    #expect(advice.bestLater?.robustExposure == 0)
+    #expect(advice.waitingTime(from: at(14, 0)) == 15 * 60)
+}
+
+@Test func advisesLeavingNowWhenDry() {
+    let post = Stop(name: "Post", location: postPlace, serviceDuration: 10 * 60, openingMinute: 9 * 60, closingMinute: 17 * 60)
+    let request = makeRequest(stops: [post], minutesFromHome: [post.id: 10], window: at(14, 0)...at(14, 30))
+
+    let advice = DepartureAdvisor.advice(for: request, scenarios: [NoRain()])
+
+    #expect(!advice.recommendsWaiting)
+    #expect(advice.leaveNow?.departure == at(14, 0))
+}
+
+@Test func waitingNeverMissesClosingTime() {
+    let post = Stop(name: "Post", location: postPlace, serviceDuration: 10 * 60, openingMinute: 9 * 60, closingMinute: 14 * 60 + 25)
+    let request = makeRequest(stops: [post], minutesFromHome: [post.id: 10], window: at(14, 0)...at(14, 30))
+
+    let advice = DepartureAdvisor.advice(for: request, scenarios: [RainBetween(start: at(14, 0), end: at(14, 15))])
+
+    #expect(!advice.recommendsWaiting)
+    #expect(advice.leaveNow != nil)
+}
+
+@Test func adviceExplainsWhenNothingFits() {
+    let post = Stop(name: "Post", location: postPlace, serviceDuration: 10 * 60, openingMinute: 9 * 60, closingMinute: 14 * 60 + 5)
+    let request = makeRequest(stops: [post], minutesFromHome: [post.id: 10], window: at(14, 0)...at(14, 30))
+
+    let advice = DepartureAdvisor.advice(for: request, scenarios: [NoRain()])
+
+    #expect(advice.leaveNow == nil)
+    #expect(advice.infeasibility == .closesTooEarly(stopName: "Post", closingMinute: 14 * 60 + 5))
+}
+
 // MARK: - Helpers
 
 private let homePlace = GeoPoint(latitude: -37.8136, longitude: 144.9631)
