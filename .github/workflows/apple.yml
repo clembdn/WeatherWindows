@@ -48,9 +48,8 @@ jobs:
         if: hashFiles('AppStaging/Package.swift') != ''
         working-directory: AppStaging
         run: |
-          schemes=$(xcodebuild -list)
-          echo "$schemes"
-          if echo "$schemes" | grep -q "AppStaging-Package"; then scheme=AppStaging-Package; else scheme=WeatherWindow; fi
+          scheme=$(xcodebuild -list | sed -n '/Schemes:/{n;p;}' | xargs)
+          echo "Using scheme $scheme"
           xcodebuild test -scheme "$scheme" -destination "$SIMULATOR" CODE_SIGNING_ALLOWED=NO
 
       - name: Check for the Xcode project
