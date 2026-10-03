@@ -5,7 +5,8 @@ import WeatherWindowCore
 
 /// Downloads the hourly rain forecast from Open-Meteo.
 struct OpenMeteoService {
-    var session: URLSession = .shared
+    /// The network call, replaceable in tests to provoke HTTP errors without a server.
+    var load: (URL) async throws -> (Data, URLResponse) = { url in try await URLSession.shared.data(from: url) }
 
     func hourlyForecast(at point: GeoPoint) async throws -> [WeatherSample] {
         guard let url = OpenMeteoRequest.hourlyForecastURL(at: point) else {
@@ -15,7 +16,7 @@ struct OpenMeteoService {
         let data: Data
         let response: URLResponse
         do {
-            (data, response) = try await session.data(from: url)
+            (data, response) = try await load(url)
         } catch let error as URLError where error.code == .cancelled {
             throw CancellationError()
         } catch {

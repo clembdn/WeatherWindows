@@ -29,7 +29,9 @@ struct DepartureAdviceCard: View {
                 Label("Leave Now", systemImage: "figure.walk.departure")
                     .font(.title2.bold())
                 choice("Leave now", schedule: now)
-                Text("Waiting up to 30 minutes would not keep you drier.")
+                Text(PlanText.isDry(now.robustExposure)
+                     ? "No rain expected on your walks in the next 30 minutes."
+                     : "Waiting up to 30 minutes would not keep you drier.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

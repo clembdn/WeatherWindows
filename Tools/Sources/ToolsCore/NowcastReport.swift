@@ -41,7 +41,7 @@ public struct NowcastReport: Sendable {
     }
 
     public static func render(_ rows: [Row], terminal: Terminal = Terminal()) -> String {
-        var lines = [terminal.style("Nowcast vs persistence · CSI at 20 dBZ within ~46 km of the CBD", .bold),
+        var lines = [terminal.style("Nowcast vs persistence · CSI at \(Int(ReflectivityConverter.rainThresholdDBZ)) dBZ within ~46 km of the CBD", .bold),
                      "  day          lead   cases   nowcast   persistence"]
         for row in rows {
             let nowcast = row.evaluation.nowcast.criticalSuccessIndex

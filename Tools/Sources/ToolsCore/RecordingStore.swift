@@ -29,14 +29,12 @@ public struct FrameRecord: Codable, Equatable, Sendable {
         rainFraction != nil && cbdRainFraction != nil && maxDBZ != nil
     }
 
-    /// Reflectivity from which a pixel counts as rain (≈ 0.65 mm/h).
-    public static let rainThresholdDBZ: Float = 20
     /// Melbourne CBD in the zoom 7 tile, and a ≈ 10 km radius around it.
     public static let cbdPixel = (x: 278, y: 277)
     public static let cbdRadius = 20
 
     public mutating func measure(_ grid: RainGrid) {
-        let threshold = Self.rainThresholdDBZ
+        let threshold = ReflectivityConverter.rainThresholdDBZ
         rainFraction = Double(grid.values.count { $0 >= threshold }) / Double(grid.values.count)
         maxDBZ = grid.values.max()
 

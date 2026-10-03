@@ -2,6 +2,10 @@ import Foundation
 
 /// Converts radar reflectivity into rain rate with the Marshall–Palmer relation Z = 200 R^1.6.
 public enum ReflectivityConverter {
+    /// Reflectivity from which a pixel counts as rain (≈ 0.65 mm/h), shared by motion estimation,
+    /// verification and the recording statistics.
+    public static let rainThresholdDBZ: Float = 20
+
     /// Rain rate in mm/h for a reflectivity in dBZ.
     public static func rainRate(dBZ: Double) -> Double {
         let z = pow(10, dBZ / 10)

@@ -7,14 +7,13 @@ public struct BlockMatchingEstimator: Sendable {
     public var searchRadius = 24
     /// Coarse search step; the best coarse offset is then refined pixel by pixel.
     public var coarseStep = 3
-    /// A block is used only if this many of its pixels are rain (≥ 20 dBZ).
+    /// A block is used only if this many of its pixels are rain (`ReflectivityConverter.rainThresholdDBZ`).
     public var minimumRainPixels = 16
     /// Below this many usable blocks, one global vector is estimated instead.
     public var minimumBlocks = 5
     /// Image pairs averaged, newest first.
     public var pairCount = 3
 
-    public static let rainThreshold: Float = 20
     /// Reflectivity below this is treated as clear air when comparing blocks.
     public static let noiseFloor: Float = 10
 
@@ -109,7 +108,7 @@ public struct BlockMatchingEstimator: Sendable {
     private func rainPixelCount(_ grid: RainGrid, x: Int, y: Int, width: Int, height: Int) -> Int {
         var count = 0
         for row in y..<(y + height) {
-            for column in x..<(x + width) where grid[column, row] >= Self.rainThreshold {
+            for column in x..<(x + width) where grid[column, row] >= ReflectivityConverter.rainThresholdDBZ {
                 count += 1
             }
         }

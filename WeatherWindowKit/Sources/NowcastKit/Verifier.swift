@@ -15,7 +15,7 @@ public enum Verifier {
     }
 
     /// Compares rain (≥ threshold) pixel by pixel inside the region.
-    public static func counts(forecast: RainGrid, observed: RainGrid, threshold: Float = 20,
+    public static func counts(forecast: RainGrid, observed: RainGrid, threshold: Float = ReflectivityConverter.rainThresholdDBZ,
                               region: PixelRegion? = nil) -> Counts {
         let area = region ?? .whole(size: observed.size)
         var counts = Counts()
@@ -45,7 +45,7 @@ public enum Verifier {
     /// and compare with the frame actually observed then.
     public static func evaluate(frames: [RadarFrame], leadMinutes: Int, region: PixelRegion,
                                 estimator: BlockMatchingEstimator = BlockMatchingEstimator(),
-                                threshold: Float = 20) -> Evaluation {
+                                threshold: Float = ReflectivityConverter.rainThresholdDBZ) -> Evaluation {
         let sorted = frames.sorted { $0.time < $1.time }
         let history = estimator.pairCount + 1
         var evaluation = Evaluation()
