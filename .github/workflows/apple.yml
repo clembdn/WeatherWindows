@@ -1,0 +1,63 @@
+name: Apple
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - "WeatherWindowKit/**"
+      - "WeatherWindow/**"
+      - ".github/workflows/apple.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  XCODE_VERSION: "26.6"
+  SIMULATOR: "platform=iOS Simulator,name=iPhone 17,OS=latest"
+
+jobs:
+  build:
+    name: Package and app on Xcode
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s "/Applications/Xcode_${XCODE_VERSION}.app"
+          xcodebuild -version
+          swift --version
+
+      - name: Test package on macOS
+        working-directory: WeatherWindowKit
+        run: swift test -Xswiftc -warnings-as-errors
+
+      - name: Build package for iOS Simulator
+        working-directory: WeatherWindowKit
+        run: |
+          if xcodebuild -list | grep -q "WeatherWindowKit-Package"; then scheme=WeatherWindowKit-Package; else scheme=WeatherWindowKit; fi
+          xcodebuild build -scheme "$scheme" -destination "generic/platform=iOS Simulator" CODE_SIGNING_ALLOWED=NO
+
+      - name: Check for the Xcode project
+        id: project
+        run: |
+          if [ -f WeatherWindow/WeatherWindow.xcodeproj/project.pbxproj ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::WeatherWindow.xcodeproj does not exist yet; app build skipped."
+          fi
+
+      - name: Build and test the app
+        if: steps.project.outputs.exists == 'true'
+        run: |
+          xcodebuild test \
+            -project WeatherWindow/WeatherWindow.xcodeproj \
+            -scheme WeatherWindow \
+            -destination "$SIMULATOR" \
+            CODE_SIGNING_ALLOWED=NO

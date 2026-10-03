@@ -1,0 +1,30 @@
+name: Radar backup
+
+# Safety net for the local cron: RainViewer keeps 2 h of frames, so an hourly run
+# covers the nights when the laptop sleeps. Frames are kept as artifacts for 90 days,
+# never committed; `./ww sync-radar` imports them into recordings/.
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    container: swift:6.3.3-noble
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/cache@v6
+        with:
+          path: Tools/.build
+          key: radar-tools-6.3.3-${{ hashFiles('Tools/**/*.swift', 'WeatherWindowKit/Package.swift', 'WeatherWindowKit/Sources/**') }}
+      - run: swift build -c release --package-path Tools
+      - run: "$(swift build -c release --show-bin-path --package-path Tools)/ww record --out recordings"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: radar-${{ github.run_id }}
+          path: recordings/
+          retention-days: 90
+          if-no-files-found: warn

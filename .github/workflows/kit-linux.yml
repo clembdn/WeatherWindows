@@ -1,0 +1,45 @@
+name: Kit (Linux)
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  swift:
+    name: swift test
+    runs-on: ubuntu-latest
+    container: swift:6.3.3-noble
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: WeatherWindowKit
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/cache@v6
+        with:
+          path: WeatherWindowKit/.build
+          key: linux-swift-6.3.3-${{ hashFiles('WeatherWindowKit/Package.swift') }}
+      - run: swift --version
+      - run: swift build --build-tests -Xswiftc -warnings-as-errors
+      - run: swift test --skip-build
+
+  tools:
+    name: swift test (Tools)
+    runs-on: ubuntu-latest
+    container: swift:6.3.3-noble
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: Tools
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/cache@v6
+        with:
+          path: Tools/.build
+          key: linux-tools-6.3.3-${{ hashFiles('Tools/Package.swift', 'WeatherWindowKit/Package.swift') }}
+      - run: swift build --build-tests
+      - run: swift test --skip-build

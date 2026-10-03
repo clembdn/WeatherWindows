@@ -1,0 +1,21 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode
+xcuserdata/
+DerivedData/
+*.xcuserstate
+*.xcscmblue
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+.pytest_cache/
+
+# Radar recordings (large, kept on disk and in CI artifacts only)
+recordings/
+.build-docker/

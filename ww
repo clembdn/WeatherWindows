@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Builds (if needed) and runs the WeatherWindow command-line tools. Try: ./ww status
+set -euo pipefail
+command -v swift >/dev/null || source "$HOME/.local/share/swiftly/env.sh"
+tools="$(cd "$(dirname "$0")" && pwd)/Tools"
+swift build -c release -q --package-path "$tools" >&2
+exec "$(swift build -c release --show-bin-path --package-path "$tools")/ww" "$@"
