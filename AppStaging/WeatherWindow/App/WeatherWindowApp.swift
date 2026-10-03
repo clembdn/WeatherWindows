@@ -29,6 +29,7 @@ struct WeatherWindowApp: App {
                 .environment(errandStore)
                 .environment(locationService)
                 .environment(notificationService)
+                .preferredColorScheme(LaunchOption.forcedColorScheme)
         }
         .modelContainer(container)
     }

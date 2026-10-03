@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import SwiftUI
 import WeatherWindowCore
 
 /// Launch arguments used by UI tests and screenshots.
@@ -9,6 +10,13 @@ nonisolated enum LaunchOption {
 
     static var usesSampleData: Bool {
         ProcessInfo.processInfo.arguments.contains(sampleData)
+    }
+
+    /// Forces dark mode for screenshots (the simulator ignores appearance changes from UI tests).
+    static let dark = "--dark"
+
+    static var forcedColorScheme: ColorScheme? {
+        ProcessInfo.processInfo.arguments.contains(dark) ? .dark : nil
     }
 }
 

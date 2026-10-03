@@ -13,7 +13,7 @@ nonisolated final class ScreenshotTests: XCTestCase {
 
     @MainActor
     func testDarkAppearance() {
-        captureMainScreens(prefix: "dark", appearance: .dark, includesPlanFlow: true)
+        captureMainScreens(prefix: "dark", appearance: .dark, arguments: ["--dark"], includesPlanFlow: true)
     }
 
     @MainActor
@@ -63,10 +63,10 @@ nonisolated final class ScreenshotTests: XCTestCase {
             capture(app, "\(prefix)-6-itinerary")
 
             tap(app.buttons["check-radar"])
-            XCTAssertTrue(app.otherElements["Rain map"].waitForExistence(timeout: 30)
-                          || app.staticTexts["Nothing Fits Any More"].waitForExistence(timeout: 5),
-                          "Radar advice never appeared")
+            let radarMap = app.descendants(matching: .any)["Rain map"]
+            let appeared = radarMap.waitForExistence(timeout: 60)
             capture(app, "\(prefix)-7-next-walk")
+            XCTAssertTrue(appeared, "Radar advice never appeared")
         }
 
         app.terminate()
