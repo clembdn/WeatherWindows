@@ -11,6 +11,18 @@ struct CollisionView: View {
     let minuteOffset: Double
 
     private var georeference: Georeference { nowcast.field.georeference }
+
+    /// Pixels shown around the route (≈ 8 km): the nowcast itself is computed on a much wider area.
+    static let displayMargin = 16
+
+    /// A close-up of the route, inside the area the nowcast covers.
+    private var displayRegion: PixelRegion {
+        let around = PixelRegion.around(routePoints.map(georeference.pixel(for:)), margin: Self.displayMargin,
+                                        size: nowcast.observed.last?.grid.size ?? 512)
+        let wide = nowcast.region
+        return PixelRegion(minX: max(around.minX, wide.minX), minY: max(around.minY, wide.minY),
+                           maxX: min(around.maxX, wide.maxX), maxY: min(around.maxY, wide.maxY))
+    }
     private var time: Date { result.now.addingTimeInterval(minuteOffset * 60) }
 
     /// The frame shown: the closest observed image in the past, the extrapolated one in the future.
@@ -28,7 +40,7 @@ struct CollisionView: View {
 
     var body: some View {
         let shown = frame
-        let region = nowcast.region
+        let region = displayRegion
         let image = RadarColor.image(of: shown.grid, region: region, opacity: shown.opacity)
         let route = routePoints
         let position = position(at: time)
