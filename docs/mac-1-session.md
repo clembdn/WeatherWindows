@@ -44,14 +44,14 @@ cp AppStaging/WeatherWindowTests/*.swift WeatherWindow/WeatherWindowTests/
 cp AppStaging/WeatherWindowUITests/*.swift WeatherWindow/WeatherWindowUITests/
 git rm -r -q AppStaging
 ```
-Les dossiers sont synchronisés : Xcode voit les fichiers sans rien faire.
+Les dossiers sont synchronisés : Xcode voit les fichiers sans rien faire, y compris `Resources/Replay` (la matinée enregistrée pour le mode rejeu).
 Si un test signale `No such module 'SolverKit'` : cible `WeatherWindowTests` ▸ Build Phases ▸ Link Binary With Libraries ▸ + ▸ `WeatherWindowKit`.
 
 Terminé quand : ⌘B donne 0 erreur et 0 avertissement. **Commit + push.**
 
 **6. Tests.** ⌘U.
 
-Terminé quand : les 13 tests unitaires et les 3 tests de captures passent. Sinon, copier l'erreur et me l'envoyer.
+Terminé quand : tous les tests unitaires et les 3 tests de captures passent (ils passent déjà en CI). Sinon, copier l'erreur et me l'envoyer.
 
 **7. Essai dans le simulateur.** Features ▸ Location ▸ Custom Location : −37.8136, 144.9631.
 - Ajouter 4 vraies courses par la recherche : Australia Post GPO, Coles Melbourne Central, State Library Victoria, une salle de sport.

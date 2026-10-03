@@ -53,9 +53,10 @@ struct TradeOffChart: View {
     }
 
     private func distance(of schedule: ScoredSchedule, to tap: CGPoint, proxy: ChartProxy) -> CGFloat {
-        guard let point = proxy.position(forX: schedule.duration / 60, y: schedule.robustExposure) else {
+        guard let x = proxy.position(forX: schedule.duration / 60),
+              let y = proxy.position(forY: schedule.robustExposure) else {
             return .infinity
         }
-        return hypot(point.x - tap.x, point.y - tap.y)
+        return hypot(x - tap.x, y - tap.y)
     }
 }

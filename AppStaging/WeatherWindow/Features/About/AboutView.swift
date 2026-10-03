@@ -59,6 +59,27 @@ struct AboutView: View {
                     Link("Maps and walking times: Apple Maps", destination: URL(string: "https://www.apple.com/maps/")!)
                 }
 
+                Section("Methods") {
+                    ForEach(Self.references, id: \.title) { reference in
+                        Link(destination: reference.url) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(reference.title)
+                                Text(reference.use)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+
+                Section {
+                    Text("Patterns from the FIT3178 labs: navigation and forms (Lab 3), SwiftData and networking (Lab 5), tabs and typed errors (Week 6), MapKit and Core Location (Lab 7), Swift Charts (Lab 9).")
+                    Text("No third-party libraries. Radar images are decoded with the system zlib.")
+                    Text("Generative AI (Claude, Anthropic) helped design and write parts of the code, tests and documentation. Every file was reviewed, run and can be explained by the author.")
+                } header: {
+                    Text("Course Materials and AI")
+                }
+
                 Section("Developer") {
                     NavigationLink("Walking times and forecast") {
                         DebugView()
@@ -68,4 +89,28 @@ struct AboutView: View {
             .navigationTitle("About")
         }
     }
+
+    private struct Reference {
+        let title: String
+        let use: String
+        let url: URL
+    }
+
+    private static let references = [
+        Reference(title: "Germann & Zawadzki (2002), Monthly Weather Review",
+                  use: "Extrapolating radar echoes and how fast predictability is lost",
+                  url: URL(string: "https://doi.org/10.1175/1520-0493(2002)130%3C2859:SDOTPO%3E2.0.CO;2")!),
+        Reference(title: "Pulkkinen et al. (2019), pysteps, Geoscientific Model Development",
+                  use: "Reference design for motion estimation and nowcast verification",
+                  url: URL(string: "https://doi.org/10.5194/gmd-12-4185-2019")!),
+        Reference(title: "Staniforth & Côté (1991), Monthly Weather Review",
+                  use: "Semi-Lagrangian (backward) advection",
+                  url: URL(string: "https://doi.org/10.1175/1520-0493(1991)119%3C2206:SLISFA%3E2.0.CO;2")!),
+        Reference(title: "Marshall & Palmer (1948), Journal of Meteorology",
+                  use: "Reflectivity to rain rate: Z = 200 R^1.6",
+                  url: URL(string: "https://doi.org/10.1175/1520-0469(1948)005%3C0165:TDORWS%3E2.0.CO;2")!),
+        Reference(title: "Wilks (2019), Statistical Methods in the Atmospheric Sciences",
+                  use: "Critical Success Index and persistence as the baseline to beat",
+                  url: URL(string: "https://doi.org/10.1016/C2017-0-03921-6")!)
+    ]
 }

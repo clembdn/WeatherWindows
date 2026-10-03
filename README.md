@@ -14,6 +14,8 @@ FIT3178 Custom App (P9) — Clement Boudon, Student ID 37465848, Monash Universi
 | `WeatherWindowKit/Sources/SolverKit` | Day simulation, robust score, Pareto frontier |
 | `WeatherWindowKit/Sources/NowcastKit` | Radar grids, georeference, motion estimation, advection, verification |
 | `WeatherWindow/` | iOS app (Xcode project, created in Mac session 1) |
+| `AppStaging/` | App sources written before the Xcode project exists; CI compiles, tests and screenshots them |
+| `ci/preview/` | CI-only XcodeGen spec that wraps `AppStaging/` to run UI tests and take screenshots |
 | `Tools/` | Swift command-line tools (`ww`), Docker wrapper for Swift 6.3.3 |
 | `ROADMAP.md` | Parts, "done when" checklists, spec tests and calendar, read by `./ww status` |
 | `docs/cahier-des-charges.md` | Development specification (French) |
@@ -39,7 +41,7 @@ open WeatherWindow/WeatherWindow.xcodeproj
 | Workflow | Runs on | Trigger | Checks |
 | --- | --- | --- | --- |
 | `Kit (Linux)` | `swift:6.3.3-noble` | every push | package builds with warnings as errors, all tests pass; tools tests |
-| `Apple` | `macos-26`, Xcode 26.6 | PRs to `main`, pushes to `main`, manual | package tests on macOS, package builds for iOS Simulator, app builds and tests once the Xcode project exists |
+| `Apple` | `macos-26`, Xcode 26.6 | PRs to `main`, pushes to `main`, manual | package tests on macOS, package builds for iOS Simulator, app unit tests on an iPhone simulator, UI tests with screenshots (light, dark, largest text) |
 | `Radar backup` | `ubuntu-latest` | hourly | records radar frames as a 90-day artifact |
 
 ## Progress and tools
@@ -51,6 +53,8 @@ Everything is Swift; `./ww` builds the tools package on first use.
 ./ww status --test   # same, after running the package tests
 ./ww record          # download new radar frames (cron runs this every 30 minutes)
 ./ww sync-radar      # import the frames saved by the hourly GitHub backup
+./ww verify          # replay recorded days: nowcast vs persistence (CSI) at 10, 20, 30 min
+./ww screenshots     # download the app screenshots taken by CI into screenshots/
 ```
 
 Cron entry:

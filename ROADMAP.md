@@ -83,7 +83,8 @@ Tests: georeferencesMelbourneCBD, convertsReflectivityToRainRate, recoversUnifor
 Tests: recordedSourceReturnsFramesUpToTheReplayTime, engineBuildsThirtyMinutesAroundTheRoute, engineRefusesStaleRadar, advisesWaitingForTheShowerToPass, advisesLeavingNowWhenDry, waitingNeverMissesClosingTime, adviceExplainsWhenNothingFits, advisesFromTheRecordedRadar, fallsBackToTheForecastWhenRadarIsStale
 
 ## Part 7 — Finish · Mac 4–5 · due 2026-11-04
-- [ ] About screen complete: identity, data credits, methods, AI statement
+- [x] About screen written: identity, data credits, methods with DOIs, labs, AI statement
+- [ ] About screen checked in the simulator
 - [ ] Every error situation provoked in the simulator without a crash
 - [ ] VoiceOver, largest Dynamic Type and dark mode checked on every screen
 - [ ] Zero compiler warnings, no print, final README
