@@ -85,12 +85,14 @@ public struct StatusReport {
             if !part.tests.isEmpty {
                 let written = part.tests.count { declared.contains($0) }
                 testsText = "tests \(written)/\(part.tests.count) written"
-                if written > 0, let results = testRun?.results {
+                if let results = testRun?.results, part.tests.contains(where: { results[$0] != nil }) {
                     let failing = part.tests.filter { results[$0] == false }
                     let passing = part.tests.count { results[$0] == true }
                     testsText += failing.isEmpty
                         ? terminal.style(" · \(passing) pass", .green)
                         : terminal.style(" · \(failing.count) FAIL", .red, .bold)
+                } else if written > 0 {
+                    testsText += terminal.style(" · run on iOS (CI)", .dim)
                 }
             }
 
@@ -99,7 +101,7 @@ public struct StatusReport {
             lines.append("  \(icon) " + Terminal.pad(terminal.style(part.title, .bold), to: titleWidth)
                 + Terminal.pad(part.place, to: 9)
                 + "\(Terminal.bar(fraction)) " + Terminal.pad("\(part.completedCount)/\(part.items.count)", to: 6)
-                + Terminal.pad(testsText, to: 32) + terminal.style(due, .dim))
+                + Terminal.pad(testsText, to: 36) + terminal.style(due, .dim))
         }
 
         if let current = roadmap.parts.first(where: { !$0.isComplete }) {
