@@ -92,8 +92,12 @@ jobs:
           cd screenshots
           jq -r '.[].attachments[] | [.exportedFileName, .suggestedHumanReadableName] | @tsv' manifest.json |
             while IFS=$'\t' read -r file name; do
-              mv "$file" "$(echo "$name" | sed -E 's/_[0-9]+_[0-9A-Fa-f-]+(\.[a-z]+)$/\1/')"
+              case "$name" in
+                *.png) mv "$file" "$(echo "$name" | sed -E 's/_[0-9]+_[0-9A-Fa-f-]+\.png$/.png/')" ;;
+                *) rm -f "$file" ;;
+              esac
             done
+          rm -f manifest.json
           ls
 
       - uses: actions/upload-artifact@v7

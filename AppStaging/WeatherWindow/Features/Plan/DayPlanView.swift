@@ -23,8 +23,11 @@ struct DayPlanView: View {
                 startSection
                 endSection
                 windowSection
-                calculateSection
+                errorSection
                 savedPlansSection
+            }
+            .safeAreaInset(edge: .bottom) {
+                calculateBar
             }
             .environment(\.timeZone, AppClock.timeZone)
             .navigationTitle("Plan")
@@ -119,28 +122,32 @@ struct DayPlanView: View {
         }
     }
 
-    private var calculateSection: some View {
-        Section {
-            Button {
-                Task { await calculate() }
-            } label: {
-                HStack {
-                    Spacer()
-                    if model.isLoading {
-                        ProgressView()
-                        Text(model.progress ?? "Calculating…")
-                    } else {
-                        Label("Calculate", systemImage: "cloud.sun")
-                    }
-                    Spacer()
+    /// Always visible at the bottom, so "Calculate" never hides below the form.
+    private var calculateBar: some View {
+        Button {
+            Task { await calculate() }
+        } label: {
+            HStack {
+                if model.isLoading {
+                    ProgressView()
+                    Text(model.progress ?? "Calculating…")
+                } else {
+                    Label("Calculate", systemImage: "cloud.sun")
                 }
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(!model.canCalculate(selectedCount: selectedErrands.count))
-            .accessibilityIdentifier("calculate")
-            .listRowBackground(Color.clear)
+            .frame(maxWidth: .infinity, minHeight: 44)
+        }
+        .buttonStyle(.borderedProminent)
+        .disabled(!model.canCalculate(selectedCount: selectedErrands.count))
+        .accessibilityIdentifier("calculate")
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(.bar)
+    }
 
-            if case .failed(let error) = model.state {
+    @ViewBuilder private var errorSection: some View {
+        if case .failed(let error) = model.state {
+            Section {
                 ErrorRow(error: error) { Task { await calculate() } }
             }
         }
