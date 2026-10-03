@@ -42,7 +42,7 @@ struct RouteMapView: View {
                     MapPolyline(coordinates: styled.segment.points.map(\.coordinate))
                         .stroke(styled.segment.isRainy ? Color.orange : Color.blue,
                                 style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round,
-                                                   dash: styled.segment.isRainy ? [6, 4] : []))
+                                                   dash: styled.segment.isRainy ? [2, 10] : []))
                 }
                 Marker(result.start.name, systemImage: "figure.walk", coordinate: result.start.location.coordinate)
                 ForEach(Array(schedule.order.enumerated()), id: \.offset) { index, stop in

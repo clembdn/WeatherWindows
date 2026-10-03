@@ -49,6 +49,7 @@ struct SavedPlanView: View {
                 }
             }
         }
+        .replayBanner()
         .navigationTitle(plan.date.formatted(date: .abbreviated, time: .omitted))
         .navigationBarTitleDisplayMode(.inline)
     }

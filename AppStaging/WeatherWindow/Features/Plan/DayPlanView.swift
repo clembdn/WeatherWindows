@@ -30,6 +30,7 @@ struct DayPlanView: View {
             .safeAreaInset(edge: .bottom) {
                 calculateBar
             }
+            .replayBanner()
             .environment(\.timeZone, AppClock.timeZone)
             .navigationTitle("Plan")
             .navigationDestination(for: PlanRoute.self) { route in
@@ -70,6 +71,7 @@ struct DayPlanView: View {
                         }
                     }
                 }
+                .tint(.primary)
                 .accessibilityAddTraits(isSelected ? .isSelected : [])
                 .accessibilityIdentifier("errand-\(errand.name)")
             }

@@ -23,6 +23,12 @@ struct ItineraryView: View {
                 LabeledContent("Back", value: AppClock.time(schedule.returnTime))
                 LabeledContent("Time out", value: PlanText.duration(schedule.returnTime.timeIntervalSince(schedule.departure)))
                 RainBadge(exposure: schedule.robustExposure)
+                NavigationLink {
+                    NextWalkView(input: NextWalkInput(current: result.start, remaining: schedule.order, end: result.end))
+                } label: {
+                    Label("Check the Radar Before Leaving", systemImage: "cloud.sun.rain")
+                }
+                .accessibilityIdentifier("check-radar")
                 Button("Remind Me to Leave at \(AppClock.time(schedule.departure))", systemImage: "bell") {
                     Task { await remind() }
                 }
@@ -59,12 +65,6 @@ struct ItineraryView: View {
             }
 
             Section {
-                NavigationLink {
-                    NextWalkView(input: NextWalkInput(current: result.start, remaining: schedule.order, end: result.end))
-                } label: {
-                    Label("Check the Radar Before Leaving", systemImage: "cloud.sun.rain")
-                }
-                .accessibilityIdentifier("check-radar")
                 ForecastNotice()
             }
 
@@ -80,6 +80,7 @@ struct ItineraryView: View {
                 }
             }
         }
+        .replayBanner()
         .navigationTitle("Itinerary")
         .navigationBarTitleDisplayMode(.inline)
     }

@@ -40,7 +40,11 @@ nonisolated final class ScreenshotTests: XCTestCase {
 
         tap(app.buttons["Add Errand"].firstMatch)
         capture(app, "\(prefix)-3-new-errand")
-        tap(app.buttons["Cancel"])
+        if app.buttons["Cancel"].waitForExistence(timeout: 5) {
+            app.buttons["Cancel"].tap()
+        } else {
+            app.swipeDown(velocity: .fast)
+        }
 
         tap(app.tabBars.buttons["About"])
         capture(app, "\(prefix)-4-about")

@@ -46,6 +46,7 @@ struct ErrandListView: View {
                     .searchable(text: $searchText, prompt: "Search errands")
                 }
             }
+            .replayBanner()
             .navigationTitle("Errands")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {

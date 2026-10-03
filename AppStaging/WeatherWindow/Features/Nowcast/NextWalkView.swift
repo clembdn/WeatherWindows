@@ -62,6 +62,7 @@ struct NextWalkView: View {
                 }
             }
         }
+        .replayBanner()
         .navigationTitle("Next Walk")
         .navigationBarTitleDisplayMode(.inline)
         .task {

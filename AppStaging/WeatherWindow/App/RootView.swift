@@ -2,8 +2,6 @@ import SwiftUI
 
 /// The three main sections, each with its own navigation stack.
 struct RootView: View {
-    @AppStorage(AppMode.replayKey) private var replaySetting = false
-
     var body: some View {
         TabView {
             Tab("Plan", systemImage: "map") {
@@ -16,7 +14,21 @@ struct RootView: View {
                 AboutView()
             }
         }
-        .safeAreaInset(edge: .top, spacing: 0) {
+    }
+}
+
+extension View {
+    /// Shows the replay banner under the navigation bar of a screen, when replay is on.
+    func replayBanner() -> some View {
+        modifier(ReplayBannerModifier())
+    }
+}
+
+private struct ReplayBannerModifier: ViewModifier {
+    @AppStorage(AppMode.replayKey) private var replaySetting = false
+
+    func body(content: Content) -> some View {
+        content.safeAreaInset(edge: .top, spacing: 0) {
             if AppMode.isReplay(setting: replaySetting) {
                 ReplayBanner()
             }
@@ -29,6 +41,9 @@ struct ReplayBanner: View {
     var body: some View {
         Label(ReplaySession.label, systemImage: "clock.arrow.circlepath")
             .font(.footnote.weight(.semibold))
+            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 6)
             .background(Color.orange.opacity(0.25))

@@ -33,7 +33,7 @@ nonisolated enum ReplaySession {
     static let now = Date(timeIntervalSince1970: 1_790_989_500)
 
     static var label: String {
-        "Replay · " + now.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, timeZone: AppClock.timeZone))
+        "Replay · " + now.formatted(Date.FormatStyle(timeZone: AppClock.timeZone).day().month(.abbreviated).hour().minute())
     }
 
     /// Radar tiles from 10:30 to 11:30; only those up to `now` are ever used for a forecast.

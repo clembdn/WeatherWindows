@@ -86,6 +86,7 @@ struct AboutView: View {
                     }
                 }
             }
+            .replayBanner()
             .navigationTitle("About")
         }
     }

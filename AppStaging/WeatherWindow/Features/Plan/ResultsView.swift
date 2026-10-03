@@ -71,6 +71,10 @@ struct ResultsView: View {
                 }
             }
         }
+        .onAppear {
+            if selectedID == nil { selectedID = result.fastest?.id }
+        }
+        .replayBanner()
         .navigationTitle("Results")
         .navigationBarTitleDisplayMode(.inline)
     }
