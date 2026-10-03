@@ -85,11 +85,14 @@ Tests: recordedSourceReturnsFramesUpToTheReplayTime, engineBuildsThirtyMinutesAr
 ## Part 7 — Finish · Mac 4–5 · due 2026-11-04
 - [x] About screen written: identity, data credits, methods with DOIs, labs, AI statement
 - [ ] About screen checked in the simulator
+- [x] Error table mapped to automatic tests (docs/error-table.md)
+- [x] Apple accessibility audit runs in CI, exemptions justified in the test
 - [ ] Every error situation provoked in the simulator without a crash
-- [ ] VoiceOver, largest Dynamic Type and dark mode checked on every screen
+- [ ] VoiceOver, largest Dynamic Type and dark mode checked on every screen (screenshots in CI, Inspector at the Mac)
 - [ ] Zero compiler warnings, no print, final README
 - [ ] Backup demo video recorded
 - [ ] Live code changes rehearsed
+Tests: serverErrorBecomesARetryLaterMessage, tooManyRequestsIsRateLimited, unreadableBodyIsAnInvalidResponse, noConnectionIsOffline, cancellationIsNotReportedAsAnError
 
 ## Calendar
 - [ ] 2026-10-07 · Mac 1 · Xcode project, SwiftData models, errand library

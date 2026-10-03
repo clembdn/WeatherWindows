@@ -43,7 +43,7 @@ struct ErrandListView: View {
                             ContentUnavailableView.search(text: searchText)
                         }
                     }
-                    .searchable(text: $searchText, prompt: "Search errands")
+                    .searchable(text: $searchText, prompt: "Search")
                 }
             }
             .replayBanner()
