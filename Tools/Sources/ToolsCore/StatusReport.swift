@@ -15,7 +15,7 @@ public struct StatusReport {
     }
 
     private var kitFolder: URL { repository.appending(path: "WeatherWindowKit") }
-    private var testFolders: [URL] { [kitFolder.appending(path: "Tests"), repository.appending(path: "WeatherWindow")] }
+    private var testFolders: [URL] { [kitFolder.appending(path: "Tests"), repository.appending(path: "WeatherWindow"), repository.appending(path: "AppStaging")] }
     private var lastRunURL: URL { kitFolder.appending(path: ".build/ww-last-test-run.json") }
     private var calendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)

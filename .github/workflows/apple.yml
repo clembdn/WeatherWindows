@@ -8,6 +8,7 @@ on:
     paths:
       - "WeatherWindowKit/**"
       - "WeatherWindow/**"
+      - "AppStaging/**"
       - ".github/workflows/apple.yml"
   workflow_dispatch:
 
@@ -42,6 +43,15 @@ jobs:
         run: |
           if xcodebuild -list | grep -q "WeatherWindowKit-Package"; then scheme=WeatherWindowKit-Package; else scheme=WeatherWindowKit; fi
           xcodebuild build -scheme "$scheme" -destination "generic/platform=iOS Simulator" CODE_SIGNING_ALLOWED=NO
+
+      - name: Build and test the staged app sources
+        if: hashFiles('AppStaging/Package.swift') != ''
+        working-directory: AppStaging
+        run: |
+          schemes=$(xcodebuild -list)
+          echo "$schemes"
+          if echo "$schemes" | grep -q "AppStaging-Package"; then scheme=AppStaging-Package; else scheme=WeatherWindow; fi
+          xcodebuild test -scheme "$scheme" -destination "$SIMULATOR" CODE_SIGNING_ALLOWED=NO
 
       - name: Check for the Xcode project
         id: project

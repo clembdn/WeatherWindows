@@ -32,13 +32,15 @@ Tests: waitsWhenArrivingBeforeOpening, rejectsTaskEndingAfterClosing, splitsLegA
 Tests: decodesHourlyFixture, toleratesNullValues, rejectsMismatchedArrays, rainWeightExamples, buildsTileURL
 
 ## Part 2b — Data and services · Mac 1 · due 2026-10-07
+- [ ] App sources for Mac 1 written in AppStaging/, compiled and tested by CI on iOS
 - [ ] Xcode project (iOS 18, Swift Testing), local package added, concurrency settings checked
 - [ ] NSLocationWhenInUseUsageDescription set
-- [ ] SwiftData models: SavedErrand, DayPlan, PlannedStop, TransitMatrixCache
+- [ ] SwiftData models: SavedErrand, DayPlan, PlannedStop, CachedWalkingTime
 - [ ] ErrandStore with duplicate detection (AddErrandResult)
 - [ ] OpenMeteoService, PlaceSearchService, DirectionsService, LocationService
 - [ ] Errand library: errands persist after relaunch
 - [ ] Debug screen: 20 walking times and 48 h forecast, matrix read from cache on relaunch
+Tests: addsErrand, rejectsDuplicateNameIgnoringCaseAccentsAndSpaces, deletingPlanDeletesItsStops, deletingErrandKeepsThePlannedCopy, needsANameAndAPlace, rejectsClosingBeforeOpening, rejectsDurationLongerThanOpeningHours
 
 ## Part 3 — MVP interface · Mac 2 · due 2026-10-14
 - [ ] TabView (Plan, Errands, About), one NavigationStack per tab
