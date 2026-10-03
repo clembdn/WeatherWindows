@@ -5,7 +5,7 @@ struct RootView: View {
     var body: some View {
         TabView {
             Tab("Plan", systemImage: "map") {
-                PlanView()
+                DayPlanView()
             }
             Tab("Errands", systemImage: "checklist") {
                 ErrandListView()

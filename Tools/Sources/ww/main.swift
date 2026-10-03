@@ -8,6 +8,7 @@ let usage = """
       status [--test]   Progress dashboard: roadmap, tests, CI, radar, git (--test runs swift test first)
       record [--out D]  Download new RainViewer frames into recordings/ (run by cron every 30 min)
       sync-radar        Import the frames saved by the hourly GitHub backup workflow
+      screenshots       Download the latest app screenshots taken by CI into screenshots/
     """
 
 func repositoryRoot() throws -> URL {
@@ -59,6 +60,11 @@ do {
         if !summary.failedRuns.isEmpty {
             printError("Could not download runs (probably expired): \(summary.failedRuns.map(String.init).joined(separator: ", "))")
         }
+
+    case "screenshots":
+        let summary = try ScreenshotDownloader(repository: root).download()
+        print("Screenshots from run \(summary.runID) “\(summary.title)”:")
+        summary.files.forEach { print("  \(summary.folder.path)/\($0)") }
 
     default:
         print(usage)

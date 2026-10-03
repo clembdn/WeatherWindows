@@ -72,11 +72,7 @@ struct DebugView: View {
 
     private func loadForecast() async {
         forecastState = .loading
-        let points = stops.isEmpty ? [GeoPoint.melbourneCBD] : stops.map(\.location)
-        let centre = GeoPoint(
-            latitude: points.map(\.latitude).reduce(0, +) / Double(points.count),
-            longitude: points.map(\.longitude).reduce(0, +) / Double(points.count)
-        )
+        let centre = GeoPoint.centroid(of: stops.map(\.location)) ?? .melbourneCBD
         do {
             forecastState = .loaded(try await OpenMeteoService().hourlyForecast(at: centre))
         } catch is CancellationError {

@@ -43,6 +43,7 @@ Tests: decodesHourlyFixture, toleratesNullValues, rejectsMismatchedArrays, rainW
 Tests: addsErrand, rejectsDuplicateNameIgnoringCaseAccentsAndSpaces, deletingPlanDeletesItsStops, deletingErrandKeepsThePlannedCopy, needsANameAndAPlace, rejectsClosingBeforeOpening, rejectsDurationLongerThanOpeningHours
 
 ## Part 3 — MVP interface · Mac 2 · due 2026-10-14
+- [ ] Plan, Results, Itinerary and saved plans written in AppStaging/, tested and screenshotted by CI
 - [ ] TabView (Plan, Errands, About), one NavigationStack per tab
 - [ ] LoadState in every view model: loading, content, error with Retry
 - [ ] Errand form with validation messages under the faulty field
@@ -51,6 +52,7 @@ Tests: addsErrand, rejectsDuplicateNameIgnoringCaseAccentsAndSpaces, deletingPla
 - [ ] Results: fastest and driest cards, frontier list, infeasible reason
 - [ ] Itinerary with dry or rainy legs and Save plan
 - [ ] Full loop in the simulator with 3 real places, tag mvp
+Tests: refusesAFifthErrand, calculatesAFrontierWithFakeServices, reportsAnOfflineForecast, switchesToAChosenStartWhenLocationIsDenied, explainsWhichErrandClosesTooEarly, savesTheChosenScheduleWithCopiedStops
 
 ## Part 4 — Chart, map, notification · Mac 2–3 · due 2026-10-21
 - [ ] Trade-off chart with tap selection and a VoiceOver label per point

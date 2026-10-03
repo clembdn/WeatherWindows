@@ -8,12 +8,12 @@ final class ScreenshotTests: XCTestCase {
 
     @MainActor
     func testLightAppearance() {
-        captureMainScreens(prefix: "light", appearance: .light)
+        captureMainScreens(prefix: "light", appearance: .light, includesPlanFlow: true)
     }
 
     @MainActor
     func testDarkAppearance() {
-        captureMainScreens(prefix: "dark", appearance: .dark)
+        captureMainScreens(prefix: "dark", appearance: .dark, includesPlanFlow: true)
     }
 
     @MainActor
@@ -26,7 +26,8 @@ final class ScreenshotTests: XCTestCase {
     }
 
     @MainActor
-    private func captureMainScreens(prefix: String, appearance: XCUIDevice.Appearance, arguments: [String] = []) {
+    private func captureMainScreens(prefix: String, appearance: XCUIDevice.Appearance,
+                                    arguments: [String] = [], includesPlanFlow: Bool = false) {
         XCUIDevice.shared.appearance = appearance
         let app = XCUIApplication()
         app.launchArguments = ["--sample-data"] + arguments
@@ -43,6 +44,20 @@ final class ScreenshotTests: XCTestCase {
 
         tap(app.tabBars.buttons["About"])
         capture(app, "\(prefix)-4-about")
+
+        if includesPlanFlow {
+            tap(app.tabBars.buttons["Plan"])
+            for name in ["Post Office", "Coles", "Library"] {
+                tap(app.buttons["errand-\(name)"])
+            }
+            tap(app.buttons["calculate"])
+            XCTAssertTrue(app.navigationBars["Results"].waitForExistence(timeout: 30), "Results never appeared")
+            capture(app, "\(prefix)-5-results")
+
+            tap(app.buttons["plan-card"].firstMatch)
+            XCTAssertTrue(app.navigationBars["Itinerary"].waitForExistence(timeout: 10), "Itinerary never appeared")
+            capture(app, "\(prefix)-6-itinerary")
+        }
 
         app.terminate()
     }

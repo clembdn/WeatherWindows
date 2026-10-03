@@ -1,4 +1,5 @@
 import Foundation
+import SolverKit
 import SwiftData
 import WeatherWindowCore
 
@@ -26,6 +27,20 @@ final class PlannedStop {
         openingMinute = errand.openingMinute
         closingMinute = errand.closingMinute
         self.rank = rank
+        self.errand = errand
+    }
+
+    /// Copies a visit of the chosen schedule, with its times.
+    init(visit: Visit, rank: Int, errand: SavedErrand?) {
+        name = visit.stop.name
+        latitude = visit.stop.location.latitude
+        longitude = visit.stop.location.longitude
+        durationMinutes = Int(visit.stop.serviceDuration / 60)
+        openingMinute = visit.stop.openingMinute
+        closingMinute = visit.stop.closingMinute
+        self.rank = rank
+        arrival = visit.arrival
+        departure = visit.departure
         self.errand = errand
     }
 

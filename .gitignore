@@ -19,3 +19,7 @@ __pycache__/
 # Radar recordings (large, kept on disk and in CI artifacts only)
 recordings/
 .build-docker/
+
+# CI screenshots and the CI-only preview project
+screenshots/
+ci/preview/*.xcodeproj

@@ -1,0 +1,52 @@
+# CI-only: a throwaway Xcode project around AppStaging/ so GitHub can launch the app and take
+# screenshots before the real project exists (Mac session 1). Generated with XcodeGen on the runner.
+name: WeatherWindowPreview
+options:
+  deploymentTarget:
+    iOS: "18.0"
+packages:
+  WeatherWindowKit:
+    path: ../../WeatherWindowKit
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: "YES"
+    CODE_SIGNING_ALLOWED: "NO"
+    GENERATE_INFOPLIST_FILE: "YES"
+    MARKETING_VERSION: "0.1"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  WeatherWindow:
+    type: application
+    platform: iOS
+    sources:
+      - path: ../../AppStaging/WeatherWindow
+    dependencies:
+      - package: WeatherWindowKit
+        product: WeatherWindowKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: edu.monash.cboudon.WeatherWindow
+        INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: "YES"
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "WeatherWindow uses your location as the starting point of your errands."
+  WeatherWindowUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: ../../AppStaging/WeatherWindowUITests
+    dependencies:
+      - target: WeatherWindow
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: edu.monash.cboudon.WeatherWindowUITests
+schemes:
+  WeatherWindow:
+    build:
+      targets:
+        WeatherWindow: all
+        WeatherWindowUITests: [test]
+    test:
+      targets:
+        - WeatherWindowUITests

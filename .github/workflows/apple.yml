@@ -9,6 +9,7 @@ on:
       - "WeatherWindowKit/**"
       - "WeatherWindow/**"
       - "AppStaging/**"
+      - "ci/**"
       - ".github/workflows/apple.yml"
   workflow_dispatch:
 
@@ -72,12 +73,31 @@ jobs:
             -resultBundlePath "$RUNNER_TEMP/app.xcresult" \
             CODE_SIGNING_ALLOWED=NO
 
+      - name: Preview the staged app and take screenshots
+        if: steps.project.outputs.exists == 'false' && hashFiles('AppStaging/Package.swift') != ''
+        run: |
+          brew install xcodegen
+          xcodegen generate --spec ci/preview/project.yml
+          xcodebuild test \
+            -project ci/preview/WeatherWindowPreview.xcodeproj \
+            -scheme WeatherWindow \
+            -destination "$SIMULATOR" \
+            -resultBundlePath "$RUNNER_TEMP/app.xcresult"
+
       - name: Export screenshots
-        if: always() && steps.project.outputs.exists == 'true'
-        run: xcrun xcresulttool export attachments --path "$RUNNER_TEMP/app.xcresult" --output-path screenshots
+        if: always()
+        run: |
+          [ -d "$RUNNER_TEMP/app.xcresult" ] || exit 0
+          xcrun xcresulttool export attachments --path "$RUNNER_TEMP/app.xcresult" --output-path screenshots
+          cd screenshots
+          jq -r '.[].attachments[] | [.exportedFileName, .suggestedHumanReadableName] | @tsv' manifest.json |
+            while IFS=$'\t' read -r file name; do
+              mv "$file" "$(echo "$name" | sed -E 's/_[0-9]+_[0-9A-Fa-f-]+(\.[a-z]+)$/\1/')"
+            done
+          ls
 
       - uses: actions/upload-artifact@v7
-        if: always() && steps.project.outputs.exists == 'true'
+        if: always()
         with:
           name: screenshots
           path: screenshots/
