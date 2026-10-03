@@ -69,8 +69,9 @@ final class DayPlanViewModel {
     private(set) var selectionMessage: String?
 
     init(now: Date = .now) {
-        windowStart = Self.nextFiveMinutes(after: now)
-        windowEnd = windowStart.addingTimeInterval(2 * 3600)
+        let start = Self.nextFiveMinutes(after: now)
+        windowStart = start
+        windowEnd = start.addingTimeInterval(2 * 3600)
     }
 
     static func nextFiveMinutes(after date: Date) -> Date {
