@@ -18,7 +18,7 @@ public struct RadarSync: Sendable {
 
     public func sync() throws -> Summary {
         let list = Shell.run(
-            ["gh", "run", "list", "--workflow", "radar-backup.yml", "--status", "success",
+            ["gh", "run", "list", "--workflow", "radar-backup.yml", "--status", "completed",
              "--limit", "1000", "--json", "databaseId"],
             in: repository
         )
