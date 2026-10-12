@@ -1,17 +1,14 @@
 import SolverKit
 import SwiftData
 import SwiftUI
-import UIKit
 
-/// The chosen schedule step by step: each walk with its rain, each errand with arrival, wait and departure.
+// The chosen schedule step by step: each walk with its rain, each errand with arrival, wait and departure.
 struct ItineraryView: View {
-    let model: DayPlanViewModel
     let result: PlanResult
     let schedule: ScoredSchedule
 
     @Environment(\.modelContext) private var context
     @Environment(NotificationService.self) private var notifications
-    @Environment(\.openURL) private var openURL
     @State private var isSaved = false
     @State private var reminderMessage: String?
     @State private var saveErrorMessage: String?
@@ -19,18 +16,19 @@ struct ItineraryView: View {
     var body: some View {
         List {
             Section {
-                LabeledContent("Leave", value: AppClock.time(schedule.departure))
-                LabeledContent("Back", value: AppClock.time(schedule.returnTime))
+                LabeledContent("Leave", value: Melbourne.time(schedule.departure))
+                LabeledContent("Back", value: Melbourne.time(schedule.returnTime))
                 LabeledContent("Time out", value: PlanText.duration(schedule.returnTime.timeIntervalSince(schedule.departure)))
                 RainBadge(exposure: schedule.robustExposure)
                 NavigationLink {
-                    NextWalkView(input: NextWalkInput(current: result.start, remaining: schedule.order, end: result.end))
+                    NextWalkView(input: NextWalkInput(current: result.start, remaining: schedule.order, end: result.end),
+                                 data: result.data)
                 } label: {
                     Label("Check the Radar Before Leaving", systemImage: "cloud.sun.rain")
                 }
                 .accessibilityIdentifier("check-radar")
-                Button("Remind Me to Leave at \(AppClock.time(schedule.departure))", systemImage: "bell") {
-                    Task { await remind() }
+                Button("Remind Me to Leave at \(Melbourne.time(schedule.departure))", systemImage: "bell") {
+                    remind()
                 }
                 if let reminderMessage {
                     Text(reminderMessage)
@@ -38,9 +36,7 @@ struct ItineraryView: View {
                         .foregroundStyle(.secondary)
                 }
                 if notifications.isDenied {
-                    Button("Turn On Notifications in Settings", systemImage: "gear") {
-                        if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
-                    }
+                    NotificationSettingsButton()
                 }
             }
 
@@ -50,18 +46,24 @@ struct ItineraryView: View {
             }
 
             Section("Steps") {
-                StepRow(systemImage: "figure.walk.departure", title: "Leave \(result.start.name)",
-                        detail: AppClock.time(schedule.departure))
+                LabeledContent {
+                    Text(Melbourne.time(schedule.departure))
+                } label: {
+                    Label("Leave \(result.start.name)", systemImage: "figure.walk.departure")
+                }
 
-                ForEach(Array(schedule.legs.enumerated()), id: \.offset) { index, leg in
-                    LegRow(leg: leg, destination: result.name(of: leg.to))
+                ForEach(schedule.legs.indices, id: \.self) { index in
+                    LegRow(leg: schedule.legs[index], destination: result.name(of: schedule.legs[index].to))
                     if index < schedule.visits.count {
                         VisitRow(visit: schedule.visits[index])
                     }
                 }
 
-                StepRow(systemImage: "house", title: "Arrive at \(result.end.name)",
-                        detail: AppClock.time(schedule.returnTime))
+                LabeledContent {
+                    Text(Melbourne.time(schedule.returnTime))
+                } label: {
+                    Label("Arrive at \(result.end.name)", systemImage: "house")
+                }
             }
 
             Section {
@@ -75,50 +77,32 @@ struct ItineraryView: View {
                 } else {
                     Button("Save This Plan", systemImage: "square.and.arrow.down", action: save)
                 }
-                if let saveErrorMessage {
-                    ValidationMessage(text: saveErrorMessage)
-                }
+                ValidationMessage(text: saveErrorMessage)
             }
         }
-        .replayBanner()
         .navigationTitle("Itinerary")
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    /// One reminder per plan: scheduling again replaces it instead of adding a second one.
-    private func remind() async {
-        let scheduled = await notifications.scheduleReminder(
-            id: "plan-\(schedule.id)",
-            at: schedule.departure,
-            title: "Time to leave",
-            body: "Leave now for \(schedule.order.map(\.name).joined(separator: ", ")). \(PlanText.rain(schedule.robustExposure))."
-        )
-        reminderMessage = scheduled
-            ? "Reminder set for \(AppClock.time(schedule.departure))."
-            : "Notifications are off, so no reminder was set."
+    // The plan id is the reminder id, so asking again replaces the reminder instead of adding a second one.
+    private func remind() {
+        let names = schedule.order.map(\.name).joined(separator: ", ")
+        Task {
+            reminderMessage = await notifications.scheduleReminder(
+                id: "plan-\(schedule.id)",
+                at: schedule.departure,
+                body: "Leave now for \(names). \(PlanText.rain(schedule.robustExposure))."
+            )
+        }
     }
 
     private func save() {
         do {
-            try model.save(schedule, from: result, in: context)
+            try result.save(schedule, in: context)
             isSaved = true
             saveErrorMessage = nil
         } catch {
             saveErrorMessage = "The plan couldn't be saved. \(error.localizedDescription)"
-        }
-    }
-}
-
-private struct StepRow: View {
-    let systemImage: String
-    let title: String
-    let detail: String
-
-    var body: some View {
-        LabeledContent {
-            Text(detail)
-        } label: {
-            Label(title, systemImage: systemImage)
         }
     }
 }
@@ -142,12 +126,11 @@ private struct VisitRow: View {
     let visit: Visit
 
     private var detail: String {
-        var parts = ["Arrive \(AppClock.time(visit.arrival))"]
+        var text = "Arrive \(Melbourne.time(visit.arrival))"
         if visit.waiting >= 60 {
-            parts.append("wait \(PlanText.duration(visit.waiting))")
+            text += " · wait \(PlanText.duration(visit.waiting))"
         }
-        parts.append("leave \(AppClock.time(visit.departure))")
-        return parts.joined(separator: " · ")
+        return text + " · leave \(Melbourne.time(visit.departure))"
     }
 
     var body: some View {

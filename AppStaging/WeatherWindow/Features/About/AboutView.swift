@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// Identity, data credits and settings.
+// Identity, data credits, methods, AI statement and settings.
 struct AboutView: View {
-    @AppStorage(SettingsKey.paceFactor) private var paceFactor = 1.0
-    @AppStorage(AppMode.replayKey) private var replaySetting = false
+    @AppStorage("paceFactor") private var paceFactor = 1.0
+    @AppStorage("replayMode") private var replayMode = false
 
     private var version: String {
         let info = Bundle.main.infoDictionary
@@ -48,7 +48,7 @@ struct AboutView: View {
                 }
 
                 Section {
-                    Toggle("Replay a recorded rainy morning", isOn: $replaySetting)
+                    Toggle("Replay a recorded rainy morning", isOn: $replayMode)
                 } footer: {
                     Text("Uses the radar and forecast recorded on 3 October 2026 with a frozen clock, and straight-line walking times. Works offline.")
                 }
@@ -60,24 +60,22 @@ struct AboutView: View {
                 }
 
                 Section("Methods") {
-                    ForEach(Self.references, id: \.title) { reference in
-                        Link(destination: reference.url) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(reference.title)
-                                Text(reference.use)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
+                    Link("Germann & Zawadzki (2002): extrapolating radar echoes",
+                         destination: URL(string: "https://doi.org/10.1175/1520-0493(2002)130%3C2859:SDOTPO%3E2.0.CO;2")!)
+                    Link("Pulkkinen et al. (2019), pysteps: motion estimation and verification",
+                         destination: URL(string: "https://doi.org/10.5194/gmd-12-4185-2019")!)
+                    Link("Staniforth & Côté (1991): semi-Lagrangian advection",
+                         destination: URL(string: "https://doi.org/10.1175/1520-0493(1991)119%3C2206:SLISFA%3E2.0.CO;2")!)
+                    Link("Marshall & Palmer (1948): reflectivity to rain rate, Z = 200 R^1.6",
+                         destination: URL(string: "https://doi.org/10.1175/1520-0469(1948)005%3C0165:TDORWS%3E2.0.CO;2")!)
+                    Link("Wilks (2019): Critical Success Index and persistence",
+                         destination: URL(string: "https://doi.org/10.1016/C2017-0-03921-6")!)
                 }
 
-                Section {
+                Section("Course Materials and AI") {
                     Text("Patterns from the FIT3178 labs: navigation and forms (Lab 3), SwiftData and networking (Lab 5), tabs and typed errors (Week 6), MapKit and Core Location (Lab 7), Swift Charts (Lab 9).")
                     Text("No third-party libraries. Radar images are decoded with the system zlib.")
                     Text("Generative AI (Claude, Anthropic) helped design and write parts of the code, tests and documentation. Every file was reviewed, run and can be explained by the author.")
-                } header: {
-                    Text("Course Materials and AI")
                 }
 
                 Section("Developer") {
@@ -86,32 +84,7 @@ struct AboutView: View {
                     }
                 }
             }
-            .replayBanner()
             .navigationTitle("About")
         }
     }
-
-    private struct Reference {
-        let title: String
-        let use: String
-        let url: URL
-    }
-
-    private static let references = [
-        Reference(title: "Germann & Zawadzki (2002), Monthly Weather Review",
-                  use: "Extrapolating radar echoes and how fast predictability is lost",
-                  url: URL(string: "https://doi.org/10.1175/1520-0493(2002)130%3C2859:SDOTPO%3E2.0.CO;2")!),
-        Reference(title: "Pulkkinen et al. (2019), pysteps, Geoscientific Model Development",
-                  use: "Reference design for motion estimation and nowcast verification",
-                  url: URL(string: "https://doi.org/10.5194/gmd-12-4185-2019")!),
-        Reference(title: "Staniforth & Côté (1991), Monthly Weather Review",
-                  use: "Semi-Lagrangian (backward) advection",
-                  url: URL(string: "https://doi.org/10.1175/1520-0493(1991)119%3C2206:SLISFA%3E2.0.CO;2")!),
-        Reference(title: "Marshall & Palmer (1948), Journal of Meteorology",
-                  use: "Reflectivity to rain rate: Z = 200 R^1.6",
-                  url: URL(string: "https://doi.org/10.1175/1520-0469(1948)005%3C0165:TDORWS%3E2.0.CO;2")!),
-        Reference(title: "Wilks (2019), Statistical Methods in the Atmospheric Sciences",
-                  use: "Critical Success Index and persistence as the baseline to beat",
-                  url: URL(string: "https://doi.org/10.1016/C2017-0-03921-6")!)
-    ]
 }

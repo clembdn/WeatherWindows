@@ -5,7 +5,6 @@ import SwiftUI
 struct WeatherWindowApp: App {
     private let container: ModelContainer
     @State private var errandStore: ErrandStore
-    @State private var locationService = LocationService()
     @State private var notificationService = NotificationService()
 
     init() {
@@ -15,6 +14,7 @@ struct WeatherWindowApp: App {
                 configurations: ModelConfiguration(isStoredInMemoryOnly: LaunchOption.usesSampleData)
             )
         } catch {
+            // Without its database the app cannot do anything, so it stops here (like Apple's template).
             fatalError("The WeatherWindow database could not be opened: \(error)")
         }
         if LaunchOption.usesSampleData {
@@ -27,7 +27,6 @@ struct WeatherWindowApp: App {
         WindowGroup {
             RootView()
                 .environment(errandStore)
-                .environment(locationService)
                 .environment(notificationService)
                 .preferredColorScheme(LaunchOption.forcedColorScheme)
         }

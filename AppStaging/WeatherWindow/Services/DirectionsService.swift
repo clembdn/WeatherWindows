@@ -1,53 +1,100 @@
 import MapKit
+import OSLog
+import SolverKit
+import SwiftData
 import WeatherWindowCore
 
-/// An ordered pair of places whose walking time is needed.
-nonisolated struct WalkingPair: Hashable, Sendable {
-    let from: GeoPoint
-    let to: GeoPoint
-}
+private let logger = Logger(subsystem: "edu.monash.cboudon.WeatherWindow", category: "maps")
 
-/// Asks Apple Maps for walking times, at most three at a time, retrying when Maps throttles.
+// Walking times and walking routes from Apple Maps. Times are cached in SwiftData for a week.
 struct DirectionsService {
-    static let maxConcurrentRequests = 3
-    static let retryDelays: [Duration] = [.seconds(2), .seconds(5)]
+    let context: ModelContext
+    // 1.2 means the user walks 20 % slower than Apple Maps assumes.
+    var paceFactor = 1.0
 
-    func walkingTime(for pair: WalkingPair) async throws -> TimeInterval {
-        guard pair.from != pair.to else { return 0 }
+    struct WalkingMatrix {
+        var times: [Node: [Node: TimeInterval]] = [:]
+        var fromCache = 0
+        var requested = 0
+    }
 
-        var attempt = 0
-        while true {
-            do {
-                let request = MKDirections.Request()
-                request.source = MKMapItem(placemark: MKPlacemark(coordinate: pair.from.coordinate))
-                request.destination = MKMapItem(placemark: MKPlacemark(coordinate: pair.to.coordinate))
-                request.transportType = .walking
-                return try await MKDirections(request: request).calculateETA().expectedTravelTime
-            } catch {
-                let serviceError = ServiceError(error)
-                guard serviceError == .mapsThrottled, attempt < Self.retryDelays.count else { throw serviceError }
-                try await Task.sleep(for: Self.retryDelays[attempt])
-                attempt += 1
+    // One walking time per pair the solver needs (20 for 4 stops), asked one at a time.
+    func walkingMatrix(start: GeoPoint, end: GeoPoint, stops: [Stop]) async throws -> WalkingMatrix {
+        var matrix = WalkingMatrix()
+        for pair in PlanRequest.neededPairs(for: stops) {
+            let from = pair.from.location(start: start, end: end, stops: stops)
+            let to = pair.to.location(start: start, end: end, stops: stops)
+            let key = CachedWalkingTime.key(from: from, to: to)
+
+            let seconds: TimeInterval
+            if let cached = cachedSeconds(forKey: key) {
+                seconds = cached
+                matrix.fromCache += 1
+            } else {
+                seconds = try await walkingTime(from: from, to: to)
+                context.insert(CachedWalkingTime(key: key, seconds: seconds))
+                matrix.requested += 1
             }
+            matrix.times[pair.from, default: [:]][pair.to] = seconds * paceFactor
+        }
+
+        if matrix.requested > 0 {
+            do {
+                try context.save()
+            } catch {
+                logger.error("Walking times could not be cached: \(error.localizedDescription)")
+            }
+        }
+        return matrix
+    }
+
+    func walkingTime(from origin: GeoPoint, to destination: GeoPoint) async throws -> TimeInterval {
+        if origin == destination {
+            return 0
+        }
+        let request = walkingRequest(from: origin, to: destination)
+        do {
+            return try await MKDirections(request: request).calculateETA().expectedTravelTime
+        } catch let error as MKError where error.code == .loadingThrottled {
+            // Apple Maps limits how many requests an app sends per minute: wait a little, then try once more.
+            try await Task.sleep(for: .seconds(3))
+            return try await MKDirections(request: request).calculateETA().expectedTravelTime
         }
     }
 
-    func walkingTimes(for pairs: [WalkingPair]) async throws -> [WalkingPair: TimeInterval] {
-        try await withThrowingTaskGroup(of: (WalkingPair, TimeInterval).self) { group in
-            var remaining = pairs.makeIterator()
-            for _ in 0..<Self.maxConcurrentRequests {
-                guard let pair = remaining.next() else { break }
-                group.addTask { (pair, try await walkingTime(for: pair)) }
-            }
-
-            var times: [WalkingPair: TimeInterval] = [:]
-            while let (pair, time) = try await group.next() {
-                times[pair] = time
-                if let next = remaining.next() {
-                    group.addTask { (next, try await walkingTime(for: next)) }
-                }
-            }
-            return times
+    // The real path, only for the map; the solver itself uses straight lines.
+    func routeLine(from origin: GeoPoint, to destination: GeoPoint) async -> [GeoPoint] {
+        let straightLine = [origin, destination]
+        if origin == destination {
+            return straightLine
         }
+        do {
+            let response = try await MKDirections(request: walkingRequest(from: origin, to: destination)).calculate()
+            guard let polyline = response.routes.first?.polyline else { return straightLine }
+            var coordinates = [CLLocationCoordinate2D](repeating: kCLLocationCoordinate2DInvalid, count: polyline.pointCount)
+            polyline.getCoordinates(&coordinates, range: NSRange(location: 0, length: polyline.pointCount))
+            return coordinates.map { GeoPoint($0) }
+        } catch {
+            logger.info("No walking route, drawing a straight line: \(error.localizedDescription)")
+            return straightLine
+        }
+    }
+
+    private func cachedSeconds(forKey key: String) -> TimeInterval? {
+        let descriptor = FetchDescriptor<CachedWalkingTime>(predicate: #Predicate { $0.key == key })
+        guard let entry = try? context.fetch(descriptor).first else { return nil }
+        let week: TimeInterval = 7 * 24 * 3600
+        if Date.now.timeIntervalSince(entry.createdAt) > week {
+            return nil
+        }
+        return entry.seconds
+    }
+
+    private func walkingRequest(from origin: GeoPoint, to destination: GeoPoint) -> MKDirections.Request {
+        let request = MKDirections.Request()
+        request.source = MKMapItem(placemark: MKPlacemark(coordinate: origin.coordinate))
+        request.destination = MKMapItem(placemark: MKPlacemark(coordinate: destination.coordinate))
+        request.transportType = .walking
+        return request
     }
 }

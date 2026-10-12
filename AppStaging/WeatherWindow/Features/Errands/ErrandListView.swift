@@ -1,7 +1,7 @@
 import SwiftData
 import SwiftUI
 
-/// The errand library: search, swipe to delete, and + to add.
+// The errand library: search, swipe to delete, and + to add.
 struct ErrandListView: View {
     @Environment(ErrandStore.self) private var store
     @Query(sort: \SavedErrand.name) private var errands: [SavedErrand]
@@ -10,9 +10,11 @@ struct ErrandListView: View {
 
     private var visibleErrands: [SavedErrand] {
         let query = SavedErrand.normalize(searchText)
-        guard !query.isEmpty else { return errands }
-        return errands.filter {
-            $0.normalizedName.contains(query) || SavedErrand.normalize($0.placeName).contains(query)
+        if query.isEmpty {
+            return errands
+        }
+        return errands.filter { errand in
+            errand.normalizedName.contains(query) || SavedErrand.normalize(errand.placeName).contains(query)
         }
     }
 
@@ -33,10 +35,7 @@ struct ErrandListView: View {
                         ForEach(visibleErrands) { errand in
                             ErrandRow(errand: errand)
                         }
-                        .onDelete { offsets in
-                            let shown = visibleErrands
-                            store.delete(offsets.map { shown[$0] })
-                        }
+                        .onDelete(perform: deleteErrands)
                     }
                     .overlay {
                         if visibleErrands.isEmpty {
@@ -46,7 +45,6 @@ struct ErrandListView: View {
                     .searchable(text: $searchText, prompt: "Search")
                 }
             }
-            .replayBanner()
             .navigationTitle("Errands")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -57,6 +55,11 @@ struct ErrandListView: View {
                 ErrandFormView()
             }
         }
+    }
+
+    private func deleteErrands(at offsets: IndexSet) {
+        let shown = visibleErrands
+        store.delete(offsets.map { shown[$0] })
     }
 }
 
@@ -70,12 +73,10 @@ private struct ErrandRow: View {
             Text(errand.placeName)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            Label(
-                "\(errand.durationMinutes) min · open \(AppClock.string(minute: errand.openingMinute))–\(AppClock.string(minute: errand.closingMinute))",
-                systemImage: "clock"
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
+            Label("\(errand.durationMinutes) min · open \(Melbourne.time(minute: errand.openingMinute))–\(Melbourne.time(minute: errand.closingMinute))",
+                  systemImage: "clock")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .accessibilityElement(children: .combine)
     }

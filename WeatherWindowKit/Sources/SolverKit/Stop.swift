@@ -6,6 +6,15 @@ public enum Node: Hashable, Sendable {
     case start
     case end
     case stop(UUID)
+
+    /// Where this node is: the start, the end, or the place of the stop with this id.
+    public func location(start: GeoPoint, end: GeoPoint, stops: [Stop]) -> GeoPoint {
+        switch self {
+        case .start: start
+        case .end: end
+        case .stop(let id): stops.first { $0.id == id }?.location ?? start
+        }
+    }
 }
 
 /// An errand of the day, with how long it takes and when the place is open.

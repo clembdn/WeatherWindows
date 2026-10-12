@@ -1,11 +1,10 @@
 import Foundation
 import WeatherWindowCore
 
-/// A ready nowcast: the images it used, the motion it measured, and the 30 extrapolated minutes.
+/// A ready nowcast: the images it used, the 30 extrapolated minutes, and the area it covers.
 public struct Nowcast: Sendable {
     public let observed: [RadarFrame]
     public let forecast: [RadarFrame]
-    public let motion: MotionField
     public let region: PixelRegion
     public let field: NowcastRainField
 
@@ -18,6 +17,8 @@ public enum NowcastOutcome: Sendable {
     /// The newest image is too old to extrapolate; the hourly forecast must be used alone.
     case stale(lastObservation: Date)
     case noFrames
+    /// A place of the route is outside the Melbourne radar tile.
+    case outsideRadar
 }
 
 /// Turns recent radar frames into a nowcast around the places of a route.
@@ -27,18 +28,30 @@ public enum NowcastEngine {
     /// Extra pixels around the route: how far rain can travel in 30 minutes (≈ 35 km).
     public static let margin = 73
 
-    public static func make(frames: [RadarFrame], around points: [GeoPoint], now: Date, fallback: any RainField,
-                            estimator: BlockMatchingEstimator = BlockMatchingEstimator(),
-                            georeference: Georeference = Georeference()) -> NowcastOutcome {
+    /// Measures the motion, extrapolates 30 minutes and blends the result with the hourly forecast.
+    public static func make(frames: [RadarFrame], around points: [GeoPoint], now: Date,
+                            fallback: any RainField) -> NowcastOutcome {
         let sorted = frames.sorted { $0.time < $1.time }
         guard let last = sorted.last else { return .noFrames }
-        guard now.timeIntervalSince(last.time) <= maximumAge else { return .stale(lastObservation: last.time) }
+        if now.timeIntervalSince(last.time) > maximumAge {
+            return .stale(lastObservation: last.time)
+        }
 
-        let region = PixelRegion.around(points.map(georeference.pixel(for:)), margin: margin, size: last.grid.size)
-        let motion = estimator.estimate(from: sorted, region: region)
+        let georeference = Georeference()
+        let size = last.grid.size
+        var pixels: [(x: Double, y: Double)] = []
+        for point in points {
+            let pixel = georeference.pixel(for: point)
+            if pixel.x < 0 || pixel.y < 0 || pixel.x >= Double(size) || pixel.y >= Double(size) {
+                return .outsideRadar
+            }
+            pixels.append(pixel)
+        }
+
+        let region = PixelRegion.around(pixels, margin: margin, size: size)
+        let motion = BlockMatchingEstimator().estimate(from: sorted, region: region)
         let forecast = Advector.forecast(from: last, motion: motion, minutes: 1...30, region: region)
-        let field = NowcastRainField(frames: [last] + forecast, lastObservation: last.time,
-                                     fallback: fallback, georeference: georeference)
-        return .ready(Nowcast(observed: sorted, forecast: forecast, motion: motion, region: region, field: field))
+        let field = NowcastRainField(frames: [last] + forecast, lastObservation: last.time, fallback: fallback)
+        return .ready(Nowcast(observed: sorted, forecast: forecast, region: region, field: field))
     }
 }

@@ -1,7 +1,6 @@
 import Foundation
 import MapKit
 
-/// Every failure a service can report, with a message the user can act on.
 nonisolated enum ServiceError: LocalizedError, Equatable {
     case offline
     case timedOut
@@ -13,15 +12,22 @@ nonisolated enum ServiceError: LocalizedError, Equatable {
     case placeNotFound
     case locationDenied
     case locationUnavailable
+    case cancelled
     case other(String)
 
-    /// Translates system errors (URLSession, MapKit) into the cases above.
-    init(_ error: any Error) {
+    // Turns the errors of URLSession, MapKit and JSONDecoder into one of the cases above.
+    init(_ error: Error) {
         switch error {
         case let serviceError as ServiceError:
             self = serviceError
+        case is CancellationError:
+            self = .cancelled
+        case is DecodingError:
+            self = .invalidResponse
         case let urlError as URLError:
             switch urlError.code {
+            case .cancelled:
+                self = .cancelled
             case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed, .cannotFindHost:
                 self = .offline
             case .timedOut:
@@ -31,14 +37,32 @@ nonisolated enum ServiceError: LocalizedError, Equatable {
             }
         case let mapError as MKError:
             switch mapError.code {
-            case .loadingThrottled: self = .mapsThrottled
-            case .directionsNotFound: self = .noWalkingRoute
-            case .placemarkNotFound: self = .placeNotFound
-            case .serverFailure: self = .offline
-            default: self = .other(mapError.localizedDescription)
+            case .loadingThrottled:
+                self = .mapsThrottled
+            case .directionsNotFound:
+                self = .noWalkingRoute
+            case .placemarkNotFound:
+                self = .placeNotFound
+            case .serverFailure:
+                self = .offline
+            default:
+                self = .other(mapError.localizedDescription)
             }
         default:
             self = .other(error.localizedDescription)
+        }
+    }
+
+    // Throws if an HTTP answer is not a success.
+    static func check(_ response: URLResponse) throws {
+        guard let http = response as? HTTPURLResponse else {
+            throw ServiceError.invalidResponse
+        }
+        if http.statusCode == 429 {
+            throw ServiceError.rateLimited
+        }
+        if !(200...299).contains(http.statusCode) {
+            throw ServiceError.httpStatus(http.statusCode)
         }
     }
 
@@ -50,7 +74,7 @@ nonisolated enum ServiceError: LocalizedError, Equatable {
             "The request took too long. Try again."
         case .invalidResponse:
             "The service sent an unexpected answer."
-        case .httpStatus(let code) where (500...599).contains(code):
+        case .httpStatus(let code) where code >= 500:
             "Weather service unavailable, try again in a minute."
         case .httpStatus(let code):
             "The service returned an error (HTTP \(code))."
@@ -66,6 +90,8 @@ nonisolated enum ServiceError: LocalizedError, Equatable {
             "Location access is off. Choose a start place instead, or allow access in Settings."
         case .locationUnavailable:
             "Your location isn't available right now. Choose a start place instead."
+        case .cancelled:
+            "Cancelled."
         case .other(let message):
             message
         }

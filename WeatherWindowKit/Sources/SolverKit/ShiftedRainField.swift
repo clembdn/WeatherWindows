@@ -1,7 +1,7 @@
 import Foundation
 import WeatherWindowCore
 
-/// A rain field whose timing is moved by a fixed offset, used to build robustness scenarios.
+/// A rain field moved in time by a fixed offset, used to build robustness scenarios.
 public struct ShiftedRainField: RainField {
     public let base: any RainField
     public let offset: TimeInterval
@@ -16,11 +16,14 @@ public struct ShiftedRainField: RainField {
         base.weight(at: point, time: time.addingTimeInterval(-offset))
     }
 
-    /// Offsets of the robustness scenarios besides the forecast itself.
-    public static let robustnessOffsets: [TimeInterval] = [-30, -15, 15, 30].map { $0 * 60 }
-
-    /// The forecast as is, then the same forecast 30 and 15 minutes early, 15 and 30 minutes late.
+    /// The forecast as is, then 30 and 15 minutes early, then 15 and 30 minutes late.
     public static func scenarios(around base: any RainField) -> [any RainField] {
-        [base] + robustnessOffsets.map { ShiftedRainField(base: base, offset: $0) }
+        [
+            base,
+            ShiftedRainField(base: base, offset: -30 * 60),
+            ShiftedRainField(base: base, offset: -15 * 60),
+            ShiftedRainField(base: base, offset: 15 * 60),
+            ShiftedRainField(base: base, offset: 30 * 60)
+        ]
     }
 }

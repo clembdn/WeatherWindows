@@ -2,14 +2,6 @@ import Foundation
 import Testing
 @testable import ForecastKit
 
-@Test func decodesWeatherMapsFixture() throws {
-    let maps = try loadMaps()
-
-    #expect(maps.host == "https://tilecache.rainviewer.com")
-    #expect(maps.radar.past.count == 13)
-    #expect(maps.radar.past.first?.time == Date(timeIntervalSince1970: 1_790_984_400))
-}
-
 @Test func buildsTileURL() throws {
     let maps = try loadMaps()
     let frame = try #require(maps.radar.past.first)

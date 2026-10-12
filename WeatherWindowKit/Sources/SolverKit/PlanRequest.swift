@@ -41,11 +41,21 @@ public struct PlanRequest: Sendable {
         return times
     }
 
-    func location(of node: Node) -> GeoPoint? {
-        switch node {
-        case .start: start
-        case .end: end
-        case .stop(let id): stops.first { $0.id == id }?.location
+    /// The walks the solver may need: start → each stop, each stop → end, stop → stop (20 for 4 stops).
+    public static func neededPairs(for stops: [Stop]) -> [(from: Node, to: Node)] {
+        if stops.isEmpty {
+            return [(.start, .end)]
         }
+        var pairs: [(from: Node, to: Node)] = []
+        for stop in stops {
+            pairs.append((.start, .stop(stop.id)))
+            pairs.append((.stop(stop.id), .end))
+        }
+        for from in stops {
+            for to in stops where to.id != from.id {
+                pairs.append((.stop(from.id), .stop(to.id)))
+            }
+        }
+        return pairs
     }
 }

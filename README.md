@@ -9,12 +9,12 @@ FIT3178 Custom App (P9) — Clement Boudon, Student ID 37465848, Monash Universi
 | Path | Content |
 | --- | --- |
 | `WeatherWindowKit/` | Swift package, pure Swift + Foundation, built and tested on Linux and Apple platforms |
-| `WeatherWindowKit/Sources/WeatherWindowCore` | Shared types: `GeoPoint`, `RainField`, `DateProvider` |
+| `WeatherWindowKit/Sources/WeatherWindowCore` | Shared types: `GeoPoint`, `RainField`, `RadarTile`, `RouteGeometry` |
 | `WeatherWindowKit/Sources/ForecastKit` | Open-Meteo and RainViewer decoding, hourly rain field |
 | `WeatherWindowKit/Sources/SolverKit` | Day simulation, robust score, Pareto frontier |
 | `WeatherWindowKit/Sources/NowcastKit` | Radar grids, georeference, motion estimation, advection, verification |
-| `WeatherWindow/` | iOS app (Xcode project, created in Mac session 1) |
-| `AppStaging/` | App sources written before the Xcode project exists; CI compiles, tests and screenshots them |
+| `repo-mac-gitlab/` (not tracked here) | The real Xcode project, in the Monash GitLab repository `fit3178-cbou0034/weatherwindow`, created in Mac session 1 |
+| `AppStaging/` | Copy of the GitLab app sources and tests (`Tools/sync-from-gitlab.sh`); CI compiles, tests and screenshots them |
 | `ci/preview/` | CI-only XcodeGen spec that wraps `AppStaging/` to run UI tests and take screenshots |
 | `Tools/` | Swift command-line tools (`ww`), Docker wrapper for Swift 6.3.3 |
 | `ROADMAP.md` | Parts, "done when" checklists, spec tests and calendar, read by `./ww status` |
@@ -32,8 +32,11 @@ Tools/swift.sh test
 # Command-line tools
 cd Tools && swift test
 
-# iOS app (macOS only)
-open WeatherWindow/WeatherWindow.xcodeproj
+# iOS app (macOS only), in the GitLab clone
+open repo-mac-gitlab/WeatherWindow.xcodeproj
+
+# After a Mac session: copy the GitLab sources here so GitHub CI builds the same files
+Tools/sync-from-gitlab.sh
 ```
 
 ## Continuous integration
@@ -74,10 +77,11 @@ Tile: zoom 7, x 115, y 78, 512 px, Universal Blue (scheme 2), no smoothing, no s
 | Lab pattern | Where it returns in WeatherWindow |
 | --- | --- |
 | `List`, `Form`, navigation (Lab 3) | Errand library, errand form, day planning |
-| SwiftData `@Model`, `@Query`, `ModelContext` (Lab 5) | `SavedErrand`, `DayPlan`, `PlannedStop`, `TransitMatrixCache` |
-| `URLSession` + `Decodable` + async/await, `@Observable` view model (Lab 5) | Open-Meteo and RainViewer clients, one view model per screen |
+| SwiftData `@Model`, `@Query`, `ModelContext` (Lab 5) | `SavedErrand` (with a `UUID` id like `StoredBook`), `DayPlan`, `PlannedStop`, `CachedWalkingTime` |
+| `URLSession` + `Decodable` + async/await, `@Observable` view model (Lab 5) | `OpenMeteoService`, `LiveRainViewerSource`, `DayPlanViewModel`, `NextWalkViewModel`, `ErrandFormModel` |
+| Store with a result enum (Lab 3 `HeroStore`) | `ErrandStore.add` returns `AddErrandResult` (added, duplicate name, failed) |
 | `TabView`, typed `LocalizedError` (Week 6 Campus Questboard) | Main tabs, `ServiceError` |
-| MapKit, `CLLocationManager` provider (Lab 7) | Place search, walking times, current location, route map |
+| MapKit, `CLLocationManager` provider (Lab 7) | Place search, walking times, route map; `LocationService` is the Lab 7 `LocationProvider` made `async` |
 | Swift Charts (Lab 9) | Time-versus-rain trade-off chart |
 
 ## Before each Wednesday Mac session
@@ -92,7 +96,7 @@ Tile: zoom 7, x 115, y 78, 512 px, Universal Blue (scheme 2), no smoothing, no s
 
 | Tag | Date | Done | Broken | Next |
 | --- | --- | --- | --- | --- |
-| `mac-1` | 7 Oct 2026 | | | |
+| `mac-1` | 7 Oct 2026 | Xcode project on GitLab (iOS 18, Swift 6, MainActor isolation, local package), location permission, errand library; typed address searched on Return, start place remembered | `import ForecastKit` missing in a test (member import visibility), one main actor warning in the collision view, both fixed | Mac 2: real services, full loop, tag `mvp` (checklist in `docs/mac-2-session.md`) |
 
 ## Credits
 

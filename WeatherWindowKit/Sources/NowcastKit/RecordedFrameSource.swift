@@ -1,47 +1,37 @@
 import Foundation
 
-/// Where radar frames come from: live RainViewer in the app, a recorded session for replay and tests.
-public protocol RadarFrameSource: Sendable {
-    /// Up to `count` frames captured at or before `time`, oldest first.
-    func frames(upTo time: Date, count: Int) async throws -> [RadarFrame]
-}
-
-/// Recorded PNG tiles whose file names contain their Unix capture time (`1790989200.png`, `replay-1790989200.tile`).
-/// Tiles shipped inside an iOS app use the `.tile` extension so Xcode copies them untouched instead of
-/// converting them to Apple's premultiplied CgBI PNG variant.
-public struct RecordedFrameSource: RadarFrameSource {
-    public static let fileExtensions: Set<String> = ["png", "tile"]
-
+/// Recorded radar tiles whose file names hold their Unix capture time (`1790989200.png`, `replay-1790989200.tile`).
+/// Tiles inside the app end in `.tile` so Xcode copies them as they are instead of re-encoding the PNG.
+public struct RecordedFrameSource: Sendable {
     public let files: [URL]
     public let decoder: RadarTileDecoder
 
     public init(files: [URL], decoder: RadarTileDecoder) {
-        self.files = files.filter { Self.fileExtensions.contains($0.pathExtension) && Self.captureTime(of: $0) != nil }
+        self.files = files.filter { $0.pathExtension == "png" || $0.pathExtension == "tile" }
         self.decoder = decoder
     }
 
-    /// Every tile of a folder, as written by `ww record`.
-    public init(folder: URL, decoder: RadarTileDecoder) throws {
-        self.init(files: try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil),
-                  decoder: decoder)
-    }
-
-    /// Capture times available, oldest first.
-    public var availableTimes: [Date] {
-        files.compactMap(Self.captureTime(of:)).sorted()
-    }
-
+    /// Up to `count` frames captured at or before `time`, oldest first.
     public func frames(upTo time: Date, count: Int) async throws -> [RadarFrame] {
-        let chosen = files
-            .compactMap { file in Self.captureTime(of: file).map { (file: file, time: $0) } }
-            .filter { $0.time <= time }
-            .sorted { $0.time < $1.time }
-            .suffix(count)
-        return try chosen.map { RadarFrame(grid: try decoder.decode(Data(contentsOf: $0.file)).grid, time: $0.time) }
+        var chosen: [(file: URL, time: Date)] = []
+        for file in files {
+            if let captured = Self.captureTime(of: file), captured <= time {
+                chosen.append((file, captured))
+            }
+        }
+        chosen.sort { $0.time < $1.time }
+
+        var frames: [RadarFrame] = []
+        for item in chosen.suffix(count) {
+            let grid = try decoder.decode(Data(contentsOf: item.file)).grid
+            frames.append(RadarFrame(grid: grid, time: item.time))
+        }
+        return frames
     }
 
     private static func captureTime(of file: URL) -> Date? {
         let digits = file.deletingPathExtension().lastPathComponent.filter(\.isNumber)
-        return TimeInterval(digits).map { Date(timeIntervalSince1970: $0) }
+        guard let seconds = TimeInterval(digits) else { return nil }
+        return Date(timeIntervalSince1970: seconds)
     }
 }

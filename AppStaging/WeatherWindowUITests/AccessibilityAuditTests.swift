@@ -6,7 +6,7 @@ nonisolated final class AccessibilityAuditTests: XCTestCase {
     @MainActor
     func testMainScreensPassTheAccessibilityAudit() throws {
         let app = XCUIApplication()
-        app.launchArguments = ["--sample-data"]
+        app.launchArguments = ["--sample-data", "-replayMode", "YES"]
         app.launch()
 
         var failures: [String] = []

@@ -11,7 +11,7 @@ public struct MotionVector: Hashable, Sendable {
     public static let zero = MotionVector(dx: 0, dy: 0)
 }
 
-/// How the rain moves: one vector per block of the tile.
+/// How the rain moves: one vector per block of the tile, stored row by row.
 public struct MotionField: Hashable, Sendable {
     public let blockSize: Int
     public let columns: Int
@@ -27,36 +27,36 @@ public struct MotionField: Hashable, Sendable {
         self.isGlobal = isGlobal
     }
 
+    /// The same vector everywhere.
     public static func uniform(_ vector: MotionVector, gridSize: Int, blockSize: Int) -> MotionField {
         let columns = gridSize / blockSize
         return MotionField(blockSize: blockSize, columns: columns,
                            vectors: Array(repeating: vector, count: columns * columns), isGlobal: true)
     }
 
+    /// The vector of one block.
     public subscript(column: Int, row: Int) -> MotionVector {
         vectors[row * columns + column]
     }
 
-    /// Motion at a pixel, interpolated between block centres.
+    /// Motion at a pixel, blended between the four closest block centres.
     public func vector(atX x: Double, y: Double) -> MotionVector {
         let half = Double(blockSize) / 2
         let gx = min(max((x - half) / Double(blockSize), 0), Double(columns - 1))
         let gy = min(max((y - half) / Double(blockSize), 0), Double(columns - 1))
-        let c0 = Int(gx), r0 = Int(gy)
-        let c1 = min(c0 + 1, columns - 1), r1 = min(r0 + 1, columns - 1)
-        let fx = gx - Double(c0), fy = gy - Double(r0)
+        let c0 = Int(gx)
+        let r0 = Int(gy)
+        let c1 = min(c0 + 1, columns - 1)
+        let r1 = min(r0 + 1, columns - 1)
+        let fx = gx - Double(c0)
+        let fy = gy - Double(r0)
 
-        func blend(_ value: (MotionVector) -> Double) -> Double {
-            let top = value(self[c0, r0]) * (1 - fx) + value(self[c1, r0]) * fx
-            let bottom = value(self[c0, r1]) * (1 - fx) + value(self[c1, r1]) * fx
-            return top * (1 - fy) + bottom * fy
-        }
-        return MotionVector(dx: blend(\.dx), dy: blend(\.dy))
-    }
-
-    /// Mean of all block vectors.
-    public var meanVector: MotionVector {
-        let count = Double(vectors.count)
-        return MotionVector(dx: vectors.map(\.dx).reduce(0, +) / count, dy: vectors.map(\.dy).reduce(0, +) / count)
+        let topLeft = self[c0, r0]
+        let topRight = self[c1, r0]
+        let bottomLeft = self[c0, r1]
+        let bottomRight = self[c1, r1]
+        let dx = (topLeft.dx * (1 - fx) + topRight.dx * fx) * (1 - fy) + (bottomLeft.dx * (1 - fx) + bottomRight.dx * fx) * fy
+        let dy = (topLeft.dy * (1 - fx) + topRight.dy * fx) * (1 - fy) + (bottomLeft.dy * (1 - fx) + bottomRight.dy * fx) * fy
+        return MotionVector(dx: dx, dy: dy)
     }
 }

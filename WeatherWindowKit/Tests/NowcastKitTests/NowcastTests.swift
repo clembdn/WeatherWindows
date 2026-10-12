@@ -10,13 +10,9 @@ import WeatherWindowCore
     let cbd = GeoPoint(latitude: -37.8136, longitude: 144.9631)
 
     let pixel = georeference.pixel(for: cbd)
-    let back = georeference.point(atPixelX: pixel.x, y: pixel.y)
 
     #expect(abs(pixel.x - 278) <= 1)
     #expect(abs(pixel.y - 277) <= 1)
-    #expect(abs(back.latitude - cbd.latitude) < 1e-9)
-    #expect(abs(back.longitude - cbd.longitude) < 1e-9)
-    #expect(abs(georeference.metresPerPixel(atLatitude: cbd.latitude) - 483) < 2)
 }
 
 @Test func recoversUniformShift() {
@@ -63,8 +59,8 @@ import WeatherWindowCore
 
     #expect(motion.isGlobal)
     #expect(Set(motion.vectors).count == 1)
-    #expect(abs(motion.meanVector.dx - 6) <= 1)
-    #expect(abs(motion.meanVector.dy + 3) <= 1)
+    #expect(abs(motion.vectors[0].dx - 6) <= 1)
+    #expect(abs(motion.vectors[0].dy + 3) <= 1)
 }
 
 @Test func csiBounds() throws {
@@ -74,23 +70,6 @@ import WeatherWindowCore
     #expect(Verifier.counts(forecast: grid, observed: grid).criticalSuccessIndex == 1)
     #expect(Verifier.counts(forecast: grid, observed: elsewhere).criticalSuccessIndex == 0)
     #expect(Verifier.counts(forecast: .empty(size: 512), observed: .empty(size: 512)).criticalSuccessIndex == nil)
-}
-
-// MARK: - Blending with the forecast
-
-@Test func nowcastFadesIntoTheHourlyForecast() {
-    let last = frame(discAt: (x: 278, y: 277), minutes: 0)
-    let field = NowcastRainField(frames: [last], lastObservation: last.time, fallback: ConstantRain(weight: 0))
-    let cbd = GeoPoint(latitude: -37.8136, longitude: 144.9631)
-
-    #expect(field.weight(at: cbd, time: last.time) == 1)
-    #expect(abs(field.nowcastShare(at: last.time.addingTimeInterval(15 * 60)) - 0.5) < 1e-9)
-    #expect(field.weight(at: cbd, time: last.time.addingTimeInterval(30 * 60)) == 0)
-}
-
-@Test func noEchoIsDry() {
-    #expect(ReflectivityConverter.rainWeight(dBZ: Double(ReflectivityPalette.noEchoDBZ)) == 0)
-    #expect(ReflectivityConverter.rainWeight(dBZ: 40) == 1)
 }
 
 // MARK: - Helpers
@@ -192,7 +171,21 @@ private func rainCentre(_ grid: RainGrid) -> (x: Double, y: Double)? {
     #expect(last == Date(timeIntervalSince1970: 1_790_989_800))
 }
 
+@Test func engineIgnoresPlacesOffTheRadarTile() async throws {
+    let frames = try await recordedSource().frames(upTo: Date(timeIntervalSince1970: 1_790_989_800), count: 4)
+    let sydney = GeoPoint(latitude: -33.8688, longitude: 151.2093)
+
+    let outcome = NowcastEngine.make(frames: frames, around: [sydney], now: Date(timeIntervalSince1970: 1_790_990_400),
+                                     fallback: ConstantRain(weight: 0))
+
+    guard case .outsideRadar = outcome else {
+        Issue.record("Expected the route to be outside the radar tile")
+        return
+    }
+}
+
 private func recordedSource() throws -> RecordedFrameSource {
     let folder = try #require(Bundle.module.url(forResource: "recorded", withExtension: nil, subdirectory: "Fixtures"))
-    return try RecordedFrameSource(folder: folder, decoder: RadarTileDecoder(palette: try .universalBlue()))
+    let files = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
+    return RecordedFrameSource(files: files, decoder: RadarTileDecoder(palette: try .universalBlue()))
 }

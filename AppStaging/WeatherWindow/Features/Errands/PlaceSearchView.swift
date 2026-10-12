@@ -1,85 +1,81 @@
+import MapKit
 import SwiftUI
 
-/// Live place suggestions; empty, offline and error states appear in the list, never as alerts.
+// Live place suggestions; empty, offline and error states appear in the list, never as alerts.
 struct PlaceSearchView: View {
     let onSelect: (Place) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var search = PlaceSearchService()
-    @State private var resolvingID: Int?
-    @State private var resolveErrorMessage: String?
+    @State private var isResolving = false
+    @State private var errorMessage: String?
 
     var body: some View {
         List {
-            if let resolveErrorMessage {
-                Label(resolveErrorMessage, systemImage: "exclamationmark.triangle")
+            if isResolving {
+                ProgressView("Finding the place…")
+            }
+            if let errorMessage {
+                Label(errorMessage, systemImage: "exclamationmark.triangle")
                     .foregroundStyle(.red)
             }
 
-            statusRow
+            if let message = search.errorMessage {
+                Label(message, systemImage: "wifi.exclamationmark")
+                    .foregroundStyle(.secondary)
+            } else if search.query.isEmpty {
+                Text("Type a shop, a library or an address in Melbourne.")
+                    .foregroundStyle(.secondary)
+            } else if search.results.isEmpty && search.isSearching {
+                ProgressView("Searching…")
+            } else if search.results.isEmpty {
+                ContentUnavailableView.search(text: search.query)
+            }
 
-            ForEach(search.suggestions) { suggestion in
+            ForEach(search.results, id: \.self) { completion in
                 Button {
-                    Task { await select(suggestion) }
+                    select(completion)
                 } label: {
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(suggestion.title)
-                                .foregroundStyle(.primary)
-                            if !suggestion.subtitle.isEmpty {
-                                Text(suggestion.subtitle)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        Spacer()
-                        if resolvingID == suggestion.id {
-                            ProgressView()
+                    VStack(alignment: .leading) {
+                        Text(completion.title)
+                            .foregroundStyle(.primary)
+                        if !completion.subtitle.isEmpty {
+                            Text(completion.subtitle)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
                         }
                     }
                 }
-                .disabled(resolvingID != nil)
+                .disabled(isResolving)
             }
         }
         .navigationTitle("Choose Place")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $search.query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search Melbourne")
-    }
-
-    @ViewBuilder private var statusRow: some View {
-        switch search.status {
-        case .idle:
-            Text("Type a shop, a library or an address in Melbourne.")
-                .foregroundStyle(.secondary)
-        case .searching:
-            if search.suggestions.isEmpty {
-                HStack {
-                    ProgressView()
-                    Text("Searching…")
-                }
-            }
-        case .noResults:
-            ContentUnavailableView.search(text: search.query)
-        case .failed(let message):
-            Label(message, systemImage: "wifi.exclamationmark")
-                .foregroundStyle(.secondary)
-        case .results:
-            EmptyView()
+        .onSubmit(of: .search) {
+            select(nil)
         }
     }
 
-    private func select(_ suggestion: PlaceSearchService.Suggestion) async {
-        resolvingID = suggestion.id
-        resolveErrorMessage = nil
-        defer { resolvingID = nil }
-
-        do {
-            onSelect(try await search.place(for: suggestion))
-            dismiss()
-        } catch is CancellationError {
-            return
-        } catch {
-            resolveErrorMessage = ServiceError(error).errorDescription
+    // A tapped suggestion, or the typed text when the user presses Return (nil).
+    private func select(_ completion: MKLocalSearchCompletion?) {
+        guard !isResolving else { return }
+        isResolving = true
+        errorMessage = nil
+        Task {
+            defer { isResolving = false }
+            do {
+                let place: Place
+                if let completion {
+                    place = try await search.place(for: completion)
+                } else {
+                    place = try await search.placeForQuery()
+                }
+                onSelect(place)
+                dismiss()
+            } catch {
+                errorMessage = ServiceError(error).errorDescription
+            }
         }
     }
 }

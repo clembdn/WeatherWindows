@@ -1,37 +1,34 @@
 import SolverKit
 import SwiftUI
 
-/// The best trade-offs between time and rain, or why no plan fits.
+// The best trade-offs between time and rain, or why no plan fits.
 struct ResultsView: View {
     let result: PlanResult
     @State private var selectedID: String?
 
     private var selected: ScoredSchedule? {
-        selectedID.flatMap(result.schedule(withID:)) ?? result.fastest
+        result.frontier.first { $0.id == selectedID } ?? result.fastest
     }
 
     var body: some View {
         Group {
             switch result.outcome {
             case .infeasible(let reason):
-                ContentUnavailableView(
-                    "No Plan Fits",
-                    systemImage: "clock.badge.xmark",
-                    description: Text(PlanText.reason(reason))
-                )
+                ContentUnavailableView("No Plan Fits", systemImage: "clock.badge.xmark",
+                                       description: Text(PlanText.reason(reason)))
             case .frontier(let schedules):
                 List {
                     Section {
                         ForecastNotice()
                     }
 
-                    Section {
-                        if let fastest = result.fastest, let driest = result.driest {
+                    if let fastest = result.fastest, let driest = result.driest {
+                        Section {
                             if fastest.id == driest.id {
-                                ScheduleCard(title: "Best Plan", systemImage: "star", schedule: fastest)
+                                ScheduleCard(title: "Best Plan", systemImage: "star", result: result, schedule: fastest)
                             } else {
-                                ScheduleCard(title: "Fastest", systemImage: "hare", schedule: fastest)
-                                ScheduleCard(title: "Driest", systemImage: "umbrella", schedule: driest)
+                                ScheduleCard(title: "Fastest", systemImage: "hare", result: result, schedule: fastest)
+                                ScheduleCard(title: "Driest", systemImage: "umbrella", result: result, schedule: driest)
                             }
                         }
                     }
@@ -48,33 +45,29 @@ struct ResultsView: View {
                     }
 
                     if let selected {
-                        Section {
+                        Section("Selected Plan") {
                             RouteMapView(result: result, schedule: selected)
                                 .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
-                            NavigationLink(value: PlanRoute.itinerary(scheduleID: selected.id)) {
+                            NavigationLink {
+                                ItineraryView(result: result, schedule: selected)
+                            } label: {
                                 ScheduleRow(schedule: selected)
                             }
-                        } header: {
-                            Text("Selected Plan")
                         }
                     }
 
-                    Section {
+                    Section("All Trade-offs") {
                         ForEach(schedules) { schedule in
-                            NavigationLink(value: PlanRoute.itinerary(scheduleID: schedule.id)) {
+                            NavigationLink {
+                                ItineraryView(result: result, schedule: schedule)
+                            } label: {
                                 ScheduleRow(schedule: schedule)
                             }
                         }
-                    } header: {
-                        Text("All Trade-offs")
                     }
                 }
             }
         }
-        .onAppear {
-            if selectedID == nil { selectedID = result.fastest?.id }
-        }
-        .replayBanner()
         .navigationTitle("Results")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -83,16 +76,19 @@ struct ResultsView: View {
 private struct ScheduleCard: View {
     let title: String
     let systemImage: String
+    let result: PlanResult
     let schedule: ScoredSchedule
 
     var body: some View {
-        NavigationLink(value: PlanRoute.itinerary(scheduleID: schedule.id)) {
+        NavigationLink {
+            ItineraryView(result: result, schedule: schedule)
+        } label: {
             VStack(alignment: .leading, spacing: 6) {
                 Label(title, systemImage: systemImage)
                     .font(.headline)
-                Text("Leave at \(AppClock.time(schedule.departure))")
+                Text("Leave at \(Melbourne.time(schedule.departure))")
                     .font(.title3.weight(.semibold))
-                Text("Back at \(AppClock.time(schedule.returnTime)) · \(PlanText.duration(schedule.returnTime.timeIntervalSince(schedule.departure))) out")
+                Text("Back at \(Melbourne.time(schedule.returnTime)) · \(PlanText.duration(schedule.returnTime.timeIntervalSince(schedule.departure))) out")
                     .foregroundStyle(.secondary)
                 RainBadge(exposure: schedule.robustExposure)
             }
@@ -108,7 +104,7 @@ private struct ScheduleRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("\(AppClock.time(schedule.departure)) → \(AppClock.time(schedule.returnTime))")
+            Text("\(Melbourne.time(schedule.departure)) → \(Melbourne.time(schedule.returnTime))")
                 .font(.headline)
             Text(schedule.order.map(\.name).joined(separator: " → "))
                 .font(.caption)

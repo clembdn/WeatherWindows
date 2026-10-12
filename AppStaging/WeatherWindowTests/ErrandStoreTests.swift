@@ -17,7 +17,7 @@ struct ErrandStoreTests {
     }
 
     @Test func addsErrand() throws {
-        guard case .added = store.add(draft(named: "Coles")) else {
+        guard case .added = store.add(errand(named: "Coles")) else {
             Issue.record("Expected the errand to be added")
             return
         }
@@ -27,9 +27,9 @@ struct ErrandStoreTests {
     }
 
     @Test func rejectsDuplicateNameIgnoringCaseAccentsAndSpaces() {
-        _ = store.add(draft(named: "Café Coles"))
+        _ = store.add(errand(named: "Café Coles"))
 
-        guard case .duplicateName = store.add(draft(named: "  cafe coles ")) else {
+        guard case .duplicateName = store.add(errand(named: "  cafe coles ")) else {
             Issue.record("Expected a duplicate-name result")
             return
         }
@@ -37,12 +37,9 @@ struct ErrandStoreTests {
 
     @Test func deletingPlanDeletesItsStops() throws {
         let context = container.mainContext
-        _ = store.add(draft(named: "Post"))
-        let errand = try #require(try context.fetch(FetchDescriptor<SavedErrand>()).first)
-        let plan = DayPlan(date: .now, start: place, end: nil, window: Date.now...Date.now.addingTimeInterval(7200))
-        context.insert(plan)
-        plan.stops.append(PlannedStop(copying: errand, rank: 0))
-        try context.save()
+        let post = errand(named: "Post")
+        _ = store.add(post)
+        let plan = try savedPlan(visiting: post)
 
         context.delete(plan)
         try context.save()
@@ -52,24 +49,28 @@ struct ErrandStoreTests {
     }
 
     @Test func deletingErrandKeepsThePlannedCopy() throws {
-        let context = container.mainContext
-        _ = store.add(draft(named: "Library"))
-        let errand = try #require(try context.fetch(FetchDescriptor<SavedErrand>()).first)
-        let plan = DayPlan(date: .now, start: place, end: nil, window: Date.now...Date.now.addingTimeInterval(7200))
-        context.insert(plan)
-        plan.stops.append(PlannedStop(copying: errand, rank: 0))
-        try context.save()
+        let library = errand(named: "Library")
+        _ = store.add(library)
+        _ = try savedPlan(visiting: library)
 
-        store.delete([errand])
+        store.delete([library])
 
-        let stop = try #require(try context.fetch(FetchDescriptor<PlannedStop>()).first)
+        let stop = try #require(try container.mainContext.fetch(FetchDescriptor<PlannedStop>()).first)
         #expect(stop.name == "Library")
         #expect(stop.errand == nil)
     }
 
     private let place = Place(name: "Melbourne Central", location: GeoPoint(latitude: -37.8102, longitude: 144.9628))
 
-    private func draft(named name: String) -> ErrandDraft {
-        ErrandDraft(name: name, place: place, durationMinutes: 15, openingMinute: 9 * 60, closingMinute: 17 * 60)
+    private func errand(named name: String) -> SavedErrand {
+        SavedErrand(name: name, place: place, durationMinutes: 15, openingMinute: 9 * 60, closingMinute: 17 * 60)
+    }
+
+    private func savedPlan(visiting errand: SavedErrand) throws -> DayPlan {
+        let plan = DayPlan(departure: .now, returnTime: .now.addingTimeInterval(3600), robustExposure: 0, start: place, end: nil)
+        container.mainContext.insert(plan)
+        plan.stops.append(PlannedStop(errand: errand, rank: 0, arrival: .now, departure: .now))
+        try container.mainContext.save()
+        return plan
     }
 }

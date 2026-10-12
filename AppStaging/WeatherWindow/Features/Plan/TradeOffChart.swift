@@ -2,10 +2,11 @@ import Charts
 import SolverKit
 import SwiftUI
 
-/// Time against rain for every plan on the frontier; tap a point to select it.
+// Time against rain for every plan of the frontier; touch the chart to select the closest plan.
 struct TradeOffChart: View {
     let schedules: [ScoredSchedule]
     @Binding var selectedID: String?
+    @State private var touchedMinutes: Double?
 
     var body: some View {
         Chart(schedules) { schedule in
@@ -19,44 +20,22 @@ struct TradeOffChart: View {
             .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
             .annotation(position: .top, spacing: 6) {
                 if isSelected {
-                    Text("Leave \(AppClock.time(schedule.departure))")
+                    Text("Leave \(Melbourne.time(schedule.departure))")
                         .font(.caption.bold())
                 }
             }
-            .accessibilityLabel("Leave \(AppClock.time(schedule.departure))")
-            .accessibilityValue("Back \(AppClock.time(schedule.returnTime)), \(PlanText.rain(schedule.robustExposure))")
+            .accessibilityLabel("Leave \(Melbourne.time(schedule.departure))")
+            .accessibilityValue("Back \(Melbourne.time(schedule.returnTime)), \(PlanText.rain(schedule.robustExposure))")
+        }
+        .chartXSelection(value: $touchedMinutes)
+        .onChange(of: touchedMinutes) {
+            // The value goes back to nil when the finger lifts, so only a real touch changes the selection.
+            guard let minutes = touchedMinutes else { return }
+            let closest = schedules.min { abs($0.duration / 60 - minutes) < abs($1.duration / 60 - minutes) }
+            selectedID = closest?.id
         }
         .chartXAxisLabel("Minutes until you're back")
         .chartYAxisLabel("Rain, worst case (min)")
-        .chartOverlay { proxy in
-            GeometryReader { geometry in
-                Rectangle()
-                    .fill(.clear)
-                    .contentShape(Rectangle())
-                    .onTapGesture { location in
-                        select(near: location, proxy: proxy, geometry: geometry)
-                    }
-            }
-        }
         .frame(minHeight: 220)
-    }
-
-    /// Picks the plan whose point is closest to the finger on screen (2D distance).
-    private func select(near location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy) {
-        guard let plotFrame = proxy.plotFrame else { return }
-        let origin = geometry[plotFrame].origin
-        let tap = CGPoint(x: location.x - origin.x, y: location.y - origin.y)
-
-        selectedID = schedules.min { first, second in
-            distance(of: first, to: tap, proxy: proxy) < distance(of: second, to: tap, proxy: proxy)
-        }?.id
-    }
-
-    private func distance(of schedule: ScoredSchedule, to tap: CGPoint, proxy: ChartProxy) -> CGFloat {
-        guard let x = proxy.position(forX: schedule.duration / 60),
-              let y = proxy.position(forY: schedule.robustExposure) else {
-            return .infinity
-        }
-        return hypot(x - tap.x, y - tap.y)
     }
 }

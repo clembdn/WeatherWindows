@@ -3,15 +3,15 @@ import Foundation
 /// Measures how rain moved between radar images by matching small blocks (like following groups in a crowd).
 public struct BlockMatchingEstimator: Sendable {
     public var blockSize = 16
-    /// Largest displacement searched between two images (24 px ≈ 70 km/h over 10 minutes).
+    /// Largest shift searched between two images (24 px ≈ 70 km/h over 10 minutes).
     public var searchRadius = 24
-    /// Coarse search step; the best coarse offset is then refined pixel by pixel.
+    /// Step of the coarse search; the best coarse shift is then refined pixel by pixel.
     public var coarseStep = 3
-    /// A block is used only if this many of its pixels are rain (`ReflectivityConverter.rainThresholdDBZ`).
+    /// A block is used only if this many of its pixels are rain.
     public var minimumRainPixels = 16
-    /// Below this many usable blocks, one global vector is estimated instead.
+    /// Below this many usable blocks, one global vector is measured instead.
     public var minimumBlocks = 5
-    /// Image pairs averaged, newest first.
+    /// Number of image pairs averaged, the most recent ones.
     public var pairCount = 3
 
     /// Reflectivity below this is treated as clear air when comparing blocks.
@@ -19,172 +19,187 @@ public struct BlockMatchingEstimator: Sendable {
 
     public init() {}
 
-    /// Motion in pixels per 10 minutes, from the last `pairCount` pairs of frames (oldest first).
-    /// With a region, only blocks inside it are matched (the rest take the median motion).
+    /// Motion in pixels per 10 minutes from frames sorted oldest first; only blocks inside `region` are matched.
     public func estimate(from frames: [RadarFrame], region: PixelRegion? = nil) -> MotionField {
-        let size = frames.first?.grid.size ?? 0
-        let pairs = Array(zip(frames, frames.dropFirst()).suffix(pairCount))
-        guard size > 0, !pairs.isEmpty else { return .uniform(.zero, gridSize: max(size, blockSize), blockSize: blockSize) }
+        guard frames.count >= 2, let size = frames.first?.grid.size else {
+            return .uniform(.zero, gridSize: max(frames.first?.grid.size ?? 0, blockSize), blockSize: blockSize)
+        }
 
         let columns = size / blockSize
         var sums = [MotionVector](repeating: .zero, count: columns * columns)
         var counts = [Int](repeating: 0, count: columns * columns)
         var globalVectors: [MotionVector] = []
 
-        for (earlier, later) in pairs {
+        let firstPair = max(0, frames.count - 1 - pairCount)
+        for index in firstPair..<(frames.count - 1) {
+            let earlier = frames[index]
+            let later = frames[index + 1]
+            // Vectors are per 10 minutes, whatever the real gap between the two images.
             let scale = 600 / max(later.time.timeIntervalSince(earlier.time), 60)
-            let pair = estimatePair(earlier.grid, later.grid, region: region)
-            switch pair {
-            case .blocks(let vectors):
-                for (index, vector) in vectors.enumerated() {
-                    guard let vector else { continue }
-                    sums[index].dx += vector.dx * scale
-                    sums[index].dy += vector.dy * scale
-                    counts[index] += 1
+            let before = Self.intensity(earlier.grid)
+            let after = Self.intensity(later.grid)
+
+            let blocks = rainyBlocks(in: earlier.grid, columns: columns, region: region)
+            if blocks.count >= minimumBlocks {
+                for block in blocks {
+                    let area = PixelRegion(minX: block.column * blockSize, minY: block.row * blockSize,
+                                           maxX: (block.column + 1) * blockSize - 1, maxY: (block.row + 1) * blockSize - 1)
+                    let shift = bestShift(before, after, size: size, area: area)
+                    let blockIndex = block.row * columns + block.column
+                    sums[blockIndex].dx += Double(shift.dx) * scale
+                    sums[blockIndex].dy += Double(shift.dy) * scale
+                    counts[blockIndex] += 1
                 }
-            case .global(let vector):
-                globalVectors.append(MotionVector(dx: vector.dx * scale, dy: vector.dy * scale))
+            } else if !blocks.isEmpty {
+                // Too few blocks to trust: match the box around all the rain as one big block.
+                let area = PixelRegion(minX: blocks.map(\.column).min()! * blockSize,
+                                       minY: blocks.map(\.row).min()! * blockSize,
+                                       maxX: (blocks.map(\.column).max()! + 1) * blockSize - 1,
+                                       maxY: (blocks.map(\.row).max()! + 1) * blockSize - 1)
+                let shift = bestShift(before, after, size: size, area: area)
+                globalVectors.append(MotionVector(dx: Double(shift.dx) * scale, dy: Double(shift.dy) * scale))
+            } else {
+                globalVectors.append(.zero)
             }
         }
 
-        let blockVectors: [MotionVector?] = zip(sums, counts).map { sum, count in
-            count > 0 ? MotionVector(dx: sum.dx / Double(count), dy: sum.dy / Double(count)) : nil
+        var blockVectors: [MotionVector?] = []
+        for blockIndex in sums.indices {
+            if counts[blockIndex] > 0 {
+                let count = Double(counts[blockIndex])
+                blockVectors.append(MotionVector(dx: sums[blockIndex].dx / count, dy: sums[blockIndex].dy / count))
+            } else {
+                blockVectors.append(nil)
+            }
         }
-        let validCount = blockVectors.count { $0 != nil }
-        guard validCount >= minimumBlocks else {
-            let global = globalVectors.isEmpty ? MotionVector.zero : MotionVector(
-                dx: globalVectors.map(\.dx).reduce(0, +) / Double(globalVectors.count),
-                dy: globalVectors.map(\.dy).reduce(0, +) / Double(globalVectors.count)
-            )
+
+        let usableBlocks = counts.filter { $0 > 0 }.count
+        if usableBlocks < minimumBlocks {
+            var global = MotionVector.zero
+            if !globalVectors.isEmpty {
+                let count = Double(globalVectors.count)
+                global = MotionVector(dx: globalVectors.map(\.dx).reduce(0, +) / count,
+                                      dy: globalVectors.map(\.dy).reduce(0, +) / count)
+            }
             return .uniform(global, gridSize: size, blockSize: blockSize)
         }
 
-        return MotionField(blockSize: blockSize, columns: columns,
-                           vectors: Self.smooth(blockVectors, columns: columns), isGlobal: false)
+        let smoothed = Self.smooth(blockVectors, columns: columns)
+        return MotionField(blockSize: blockSize, columns: columns, vectors: smoothed, isGlobal: false)
     }
 
-    // MARK: One pair
-
-    private enum PairEstimate {
-        case blocks([MotionVector?])
-        case global(MotionVector)
-    }
-
-    private func estimatePair(_ earlier: RainGrid, _ later: RainGrid, region: PixelRegion?) -> PairEstimate {
-        let size = earlier.size
-        let columns = size / blockSize
-        let before = Self.intensity(earlier)
-        let after = Self.intensity(later)
-
-        var vectors = [MotionVector?](repeating: nil, count: columns * columns)
-        var rainyBlocks: [(x: Int, y: Int)] = []
+    /// Blocks inside the region with enough rain pixels in the earlier image.
+    private func rainyBlocks(in grid: RainGrid, columns: Int, region: PixelRegion?) -> [(row: Int, column: Int)] {
+        var blocks: [(row: Int, column: Int)] = []
         for row in 0..<columns {
             for column in 0..<columns {
-                let origin = (x: column * blockSize, y: row * blockSize)
-                if let region, origin.x + blockSize <= region.minX || origin.x > region.maxX
-                    || origin.y + blockSize <= region.minY || origin.y > region.maxY {
+                let x = column * blockSize
+                let y = row * blockSize
+                if let region, x + blockSize <= region.minX || x > region.maxX
+                    || y + blockSize <= region.minY || y > region.maxY {
                     continue
                 }
-                guard rainPixelCount(earlier, x: origin.x, y: origin.y, width: blockSize, height: blockSize)
-                        >= minimumRainPixels else { continue }
-                rainyBlocks.append(origin)
-                let offset = bestOffset(before, after, size: size, x: origin.x, y: origin.y,
-                                        width: blockSize, height: blockSize)
-                vectors[row * columns + column] = MotionVector(dx: Double(offset.dx), dy: Double(offset.dy))
-            }
-        }
 
-        if rainyBlocks.count >= minimumBlocks {
-            return .blocks(vectors)
-        }
-        guard !rainyBlocks.isEmpty else { return .global(.zero) }
-
-        let minX = rainyBlocks.map(\.x).min() ?? 0, maxX = (rainyBlocks.map(\.x).max() ?? 0) + blockSize
-        let minY = rainyBlocks.map(\.y).min() ?? 0, maxY = (rainyBlocks.map(\.y).max() ?? 0) + blockSize
-        let offset = bestOffset(before, after, size: size, x: minX, y: minY, width: maxX - minX, height: maxY - minY)
-        return .global(MotionVector(dx: Double(offset.dx), dy: Double(offset.dy)))
-    }
-
-    private func rainPixelCount(_ grid: RainGrid, x: Int, y: Int, width: Int, height: Int) -> Int {
-        var count = 0
-        for row in y..<(y + height) {
-            for column in x..<(x + width) where grid[column, row] >= ReflectivityConverter.rainThresholdDBZ {
-                count += 1
-            }
-        }
-        return count
-    }
-
-    /// Coarse then fine search for the shift with the smallest sum of absolute differences;
-    /// ties go to the smaller shift.
-    private func bestOffset(_ before: [Float], _ after: [Float], size: Int,
-                            x: Int, y: Int, width: Int, height: Int) -> (dx: Int, dy: Int) {
-        func cost(_ dx: Int, _ dy: Int) -> Float {
-            var total: Float = 0
-            for row in y..<(y + height) {
-                let shiftedRow = row + dy
-                for column in x..<(x + width) {
-                    let shiftedColumn = column + dx
-                    let moved: Float = shiftedRow >= 0 && shiftedRow < size && shiftedColumn >= 0 && shiftedColumn < size
-                        ? after[shiftedRow * size + shiftedColumn] : 0
-                    total += abs(before[row * size + column] - moved)
+                var rainPixels = 0
+                for pixelY in y..<(y + blockSize) {
+                    for pixelX in x..<(x + blockSize) where grid[pixelX, pixelY] >= ReflectivityConverter.rainThresholdDBZ {
+                        rainPixels += 1
+                    }
+                }
+                if rainPixels >= minimumRainPixels {
+                    blocks.append((row, column))
                 }
             }
-            return total
         }
-
-        func search(_ candidates: [(Int, Int)]) -> (dx: Int, dy: Int) {
-            var best = (dx: 0, dy: 0)
-            var bestCost = Float.infinity
-            for (dx, dy) in candidates {
-                let value = cost(dx, dy)
-                let isCloser = dx * dx + dy * dy < best.dx * best.dx + best.dy * best.dy
-                if value < bestCost || (value == bestCost && isCloser) {
-                    best = (dx, dy)
-                    bestCost = value
-                }
-            }
-            return best
-        }
-
-        let radius = searchRadius
-        let coarse = stride(from: -radius, through: radius, by: coarseStep)
-        let coarseBest = search(coarse.flatMap { dy in coarse.map { dx in (dx, dy) } })
-
-        let fine = -coarseStep...coarseStep
-        return search(fine.flatMap { dy in fine.compactMap { dx in
-            let candidate = (coarseBest.dx + dx, coarseBest.dy + dy)
-            return abs(candidate.0) <= radius && abs(candidate.1) <= radius ? candidate : nil
-        } })
+        return blocks
     }
 
-    /// Clear air and noise become 0 so only real rain drives the matching.
+    /// The shift of `area` from `before` to `after`: coarse search, then pixel by pixel around the best one.
+    private func bestShift(_ before: [Float], _ after: [Float], size: Int, area: PixelRegion) -> (dx: Int, dy: Int) {
+        var coarse: [(dx: Int, dy: Int)] = []
+        for dy in stride(from: -searchRadius, through: searchRadius, by: coarseStep) {
+            for dx in stride(from: -searchRadius, through: searchRadius, by: coarseStep) {
+                coarse.append((dx, dy))
+            }
+        }
+        let coarseBest = cheapestShift(among: coarse, before, after, size: size, area: area)
+
+        var fine: [(dx: Int, dy: Int)] = []
+        for dy in -coarseStep...coarseStep {
+            for dx in -coarseStep...coarseStep {
+                let shift = (dx: coarseBest.dx + dx, dy: coarseBest.dy + dy)
+                if abs(shift.dx) <= searchRadius && abs(shift.dy) <= searchRadius {
+                    fine.append(shift)
+                }
+            }
+        }
+        return cheapestShift(among: fine, before, after, size: size, area: area)
+    }
+
+    /// The shift with the smallest sum of absolute differences; on a tie, the smaller shift wins.
+    private func cheapestShift(among shifts: [(dx: Int, dy: Int)], _ before: [Float], _ after: [Float],
+                               size: Int, area: PixelRegion) -> (dx: Int, dy: Int) {
+        var best = (dx: 0, dy: 0)
+        var bestCost = Float.infinity
+        for shift in shifts {
+            var cost: Float = 0
+            for y in area.minY...area.maxY {
+                let movedY = y + shift.dy
+                for x in area.minX...area.maxX {
+                    let movedX = x + shift.dx
+                    let isInside = movedY >= 0 && movedY < size && movedX >= 0 && movedX < size
+                    let moved: Float = isInside ? after[movedY * size + movedX] : 0
+                    cost += abs(before[y * size + x] - moved)
+                }
+            }
+
+            let isSmaller = shift.dx * shift.dx + shift.dy * shift.dy < best.dx * best.dx + best.dy * best.dy
+            if cost < bestCost || (cost == bestCost && isSmaller) {
+                best = shift
+                bestCost = cost
+            }
+        }
+        return best
+    }
+
+    /// Clear air and noise become 0, so only real rain drives the matching.
     private static func intensity(_ grid: RainGrid) -> [Float] {
         grid.values.map { max(0, $0 - noiseFloor) }
     }
 
-    /// 3 × 3 median of the valid neighbours; blocks without rain take the median of all valid vectors.
+    /// Median of each block and its valid neighbours (3 × 3); blocks without rain take the median of all blocks.
     private static func smooth(_ vectors: [MotionVector?], columns: Int) -> [MotionVector] {
         let valid = vectors.compactMap { $0 }
         let fallback = MotionVector(dx: median(valid.map(\.dx)), dy: median(valid.map(\.dy)))
 
-        return (0..<vectors.count).map { index in
-            let row = index / columns, column = index % columns
+        var smoothed: [MotionVector] = []
+        for index in vectors.indices {
+            if vectors[index] == nil {
+                smoothed.append(fallback)
+                continue
+            }
+            let row = index / columns
+            let column = index % columns
             var neighbours: [MotionVector] = []
             for r in max(0, row - 1)...min(columns - 1, row + 1) {
                 for c in max(0, column - 1)...min(columns - 1, column + 1) {
-                    if let vector = vectors[r * columns + c] { neighbours.append(vector) }
+                    if let vector = vectors[r * columns + c] {
+                        neighbours.append(vector)
+                    }
                 }
             }
-            guard vectors[index] != nil, !neighbours.isEmpty else { return fallback }
-            return MotionVector(dx: median(neighbours.map(\.dx)), dy: median(neighbours.map(\.dy)))
+            smoothed.append(MotionVector(dx: median(neighbours.map(\.dx)), dy: median(neighbours.map(\.dy))))
         }
+        return smoothed
     }
 
     private static func median(_ values: [Double]) -> Double {
-        guard !values.isEmpty else { return 0 }
+        if values.isEmpty { return 0 }
         let sorted = values.sorted()
         let middle = sorted.count / 2
-        return sorted.count.isMultiple(of: 2) ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle]
+        if sorted.count % 2 == 0 {
+            return (sorted[middle - 1] + sorted[middle]) / 2
+        }
+        return sorted[middle]
     }
 }

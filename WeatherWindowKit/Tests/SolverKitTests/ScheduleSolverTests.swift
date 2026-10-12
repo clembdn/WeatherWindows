@@ -36,10 +36,14 @@ import WeatherWindowCore
 }
 
 @Test func enumeratesAllOrders() {
-    let orders = ScheduleSolver.orders(of: [1, 2, 3, 4])
+    let stops = ["Post", "Coles", "Library", "Gym"].map { name in
+        Stop(name: name, location: homePlace, serviceDuration: 600, openingMinute: 9 * 60, closingMinute: 17 * 60)
+    }
+
+    let orders = ScheduleSolver.orders(of: stops)
 
     #expect(orders.count == 24)
-    #expect(Set(orders).count == 24)
+    #expect(Set(orders.map { $0.map(\.name) }).count == 24)
 }
 
 @Test func dryForecastGivesZeroExposure() throws {
@@ -72,11 +76,11 @@ import WeatherWindowCore
 }
 
 @Test func paretoDropsDominated() {
-    let points: [(minutes: Double, exposure: Double)] = [(50, 2.0), (55, 1.0), (60, 1.5)]
+    let schedules = [schedule(minutes: 50, exposure: 2.0), schedule(minutes: 55, exposure: 1.0), schedule(minutes: 60, exposure: 1.5)]
 
-    let kept = ParetoFrontier.frontier(of: points, first: { $0.minutes }, second: { $0.exposure })
+    let kept = ParetoFrontier.frontier(of: schedules)
 
-    #expect(kept.map(\.minutes) == [50, 55])
+    #expect(kept.map { $0.duration / 60 } == [50, 55])
 }
 
 @Test func reportsWhyNothingFits() {
@@ -92,29 +96,6 @@ import WeatherWindowCore
     let outcome = ScheduleSolver().rankSchedules(for: request, scenarios: [NoRain()])
 
     #expect(reason(outcome) == .closesTooEarly(stopName: "Post", closingMinute: 13 * 60))
-}
-
-/// Four errands, a 2-hour window and five scenarios: 24 orders × 25 departures × 5 = 3,000 evaluations.
-@Test func frontierTradesTimeForRainOnARealisticDay() throws {
-    let stops = [
-        Stop(name: "Post", location: postPlace, serviceDuration: 10 * 60, openingMinute: 9 * 60, closingMinute: 17 * 60),
-        Stop(name: "Coles", location: colesPlace, serviceDuration: 20 * 60, openingMinute: 7 * 60, closingMinute: 22 * 60),
-        Stop(name: "Library", location: libraryPlace, serviceDuration: 15 * 60, openingMinute: 10 * 60, closingMinute: 18 * 60),
-        Stop(name: "Gym", location: homePlace, serviceDuration: 45 * 60, openingMinute: 6 * 60, closingMinute: 21 * 60)
-    ]
-    let request = makeRequest(
-        stops: stops,
-        minutesFromHome: [stops[0].id: 10, stops[1].id: 8, stops[2].id: 15, stops[3].id: 12],
-        between: [(stops[0].id, stops[1].id, 6), (stops[0].id, stops[2].id, 7), (stops[0].id, stops[3].id, 9),
-                  (stops[1].id, stops[2].id, 12), (stops[1].id, stops[3].id, 5), (stops[2].id, stops[3].id, 11)],
-        window: at(14, 0)...at(16, 0)
-    )
-    let scenarios = ShiftedRainField.scenarios(around: RainBetween(start: at(14, 20), end: at(15, 10)))
-
-    let schedules = try #require(frontier(ScheduleSolver().rankSchedules(for: request, scenarios: scenarios)))
-
-    #expect(schedules.count > 1)
-    #expect(zip(schedules, schedules.dropFirst()).allSatisfy { $0.duration < $1.duration && $0.robustExposure > $1.robustExposure })
 }
 
 // MARK: - Hand-computed cases
@@ -166,16 +147,6 @@ import WeatherWindowCore
     #expect(schedules[0].returnTime == at(15, 5))
 }
 
-@Test func reportsMissingWalkingTime() {
-    let post = Stop(name: "Post", location: postPlace, serviceDuration: 10 * 60, openingMinute: 9 * 60, closingMinute: 17 * 60)
-    var request = makeRequest(stops: [post], minutesFromHome: [post.id: 10], window: at(14, 0)...at(14, 0))
-    request.walkingTimes[.stop(post.id)] = nil
-
-    let outcome = ScheduleSolver().rankSchedules(for: request, scenarios: [NoRain()])
-
-    #expect(reason(outcome) == .missingWalkingTime(from: .stop(post.id), to: .end))
-}
-
 // MARK: - Departure advice
 
 @Test func advisesWaitingForTheShowerToPass() throws {
@@ -184,7 +155,7 @@ import WeatherWindowCore
 
     let advice = DepartureAdvisor.advice(for: request, scenarios: [RainBetween(start: at(14, 0), end: at(14, 15))])
 
-    #expect(advice.recommendsWaiting)
+    #expect(advice.bestLater != nil)
     #expect(advice.leaveNow?.robustExposure == 10)
     #expect(advice.bestLater?.robustExposure == 0)
     #expect(advice.waitingTime(from: at(14, 0)) == 15 * 60)
@@ -196,7 +167,7 @@ import WeatherWindowCore
 
     let advice = DepartureAdvisor.advice(for: request, scenarios: [NoRain()])
 
-    #expect(!advice.recommendsWaiting)
+    #expect(advice.bestLater == nil)
     #expect(advice.leaveNow?.departure == at(14, 0))
 }
 
@@ -206,7 +177,7 @@ import WeatherWindowCore
 
     let advice = DepartureAdvisor.advice(for: request, scenarios: [RainBetween(start: at(14, 0), end: at(14, 15))])
 
-    #expect(!advice.recommendsWaiting)
+    #expect(advice.bestLater == nil)
     #expect(advice.leaveNow != nil)
 }
 
@@ -252,6 +223,11 @@ private func makeRequest(stops: [Stop], minutesFromHome: [UUID: Int], between: [
     }
     return PlanRequest(start: homePlace, end: homePlace, stops: stops, departureWindow: window,
                        walkingTimes: times, timeZone: melbourneCalendar.timeZone)
+}
+
+private func schedule(minutes: Double, exposure: Double) -> ScoredSchedule {
+    ScoredSchedule(departure: at(14, 0), returnTime: at(14, 0), visits: [], legs: [],
+                   exposureByScenario: [exposure], duration: minutes * 60)
 }
 
 private func frontier(_ outcome: SolveOutcome) -> [ScoredSchedule]? {

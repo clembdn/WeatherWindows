@@ -6,9 +6,6 @@ public struct RainViewerMaps: Decodable, Sendable {
     /// Address of the frame list, refreshed every 10 minutes by RainViewer.
     public static let endpoint = URL(string: "https://api.rainviewer.com/public/weather-maps.json")!
 
-    /// Universal Blue, the only colour scheme RainViewer still serves.
-    public static let colorScheme = 2
-
     public let host: String
     public let radar: Radar
 
@@ -28,16 +25,16 @@ public struct RainViewerMaps: Decodable, Sendable {
 
         public init(from decoder: any Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
-            time = Date(timeIntervalSince1970: try container.decode(TimeInterval.self, forKey: .time))
+            let seconds = try container.decode(TimeInterval.self, forKey: .time)
+            time = Date(timeIntervalSince1970: seconds)
             path = try container.decode(String.self, forKey: .path)
         }
     }
 
-    /// URL of a frame's tile without smoothing or snow colours.
+    /// URL of a frame's tile in Universal Blue (colour scheme 2, the only one left), without smoothing or snow.
     public func tileURL(for frame: Frame, tile: RadarTile = .melbourne) -> URL? {
         guard var components = URLComponents(string: host) else { return nil }
-        components.path = frame.path
-            + "/\(tile.size)/\(tile.zoom)/\(tile.x)/\(tile.y)/\(Self.colorScheme)/0_0.png"
+        components.path = frame.path + "/\(tile.size)/\(tile.zoom)/\(tile.x)/\(tile.y)/2/0_0.png"
         return components.url
     }
 }

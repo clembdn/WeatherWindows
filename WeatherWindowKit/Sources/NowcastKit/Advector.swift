@@ -1,6 +1,6 @@
 import Foundation
 
-/// A rectangle of tile pixels: only this area is extrapolated, to save time.
+/// A rectangle of tile pixels, bounds included: only this area is extrapolated, to save time.
 public struct PixelRegion: Hashable, Sendable {
     public var minX: Int
     public var minY: Int
@@ -14,18 +14,27 @@ public struct PixelRegion: Hashable, Sendable {
         self.maxY = maxY
     }
 
+    /// The whole tile.
     public static func whole(size: Int) -> PixelRegion {
         PixelRegion(minX: 0, minY: 0, maxX: size - 1, maxY: size - 1)
     }
 
-    /// The box around some pixels, widened by a margin and clipped to the tile.
+    /// The box around some pixels of the tile, widened by a margin and clipped to the tile.
     public static func around(_ pixels: [(x: Double, y: Double)], margin: Int, size: Int) -> PixelRegion {
-        guard !pixels.isEmpty else { return .whole(size: size) }
+        guard let first = pixels.first else { return .whole(size: size) }
+        var minX = first.x, maxX = first.x
+        var minY = first.y, maxY = first.y
+        for pixel in pixels {
+            minX = min(minX, pixel.x)
+            maxX = max(maxX, pixel.x)
+            minY = min(minY, pixel.y)
+            maxY = max(maxY, pixel.y)
+        }
         return PixelRegion(
-            minX: max(0, Int(pixels.map(\.x).min() ?? 0) - margin),
-            minY: max(0, Int(pixels.map(\.y).min() ?? 0) - margin),
-            maxX: min(size - 1, Int((pixels.map(\.x).max() ?? 0).rounded(.up)) + margin),
-            maxY: min(size - 1, Int((pixels.map(\.y).max() ?? 0).rounded(.up)) + margin)
+            minX: max(0, Int(minX) - margin),
+            minY: max(0, Int(minY) - margin),
+            maxX: min(size - 1, Int(maxX.rounded(.up)) + margin),
+            maxY: min(size - 1, Int(maxY.rounded(.up)) + margin)
         )
     }
 }
@@ -35,11 +44,12 @@ public enum Advector {
     /// Semi-Lagrangian backward scheme: each future pixel looks upstream for its value,
     /// I(t0 + k)(x) = I(t0)(x − k/10 · v(x)), so no pixel is left empty. Outside `region` stays dry.
     public static func forecast(from frame: RadarFrame, motion: MotionField,
-                                minutes: ClosedRange<Int> = 1...30, region: PixelRegion? = nil) -> [RadarFrame] {
+                                minutes: ClosedRange<Int>, region: PixelRegion? = nil) -> [RadarFrame] {
         let size = frame.grid.size
         let area = region ?? .whole(size: size)
 
-        return minutes.map { minute in
+        var frames: [RadarFrame] = []
+        for minute in minutes {
             var grid = RainGrid.empty(size: size)
             let steps = Double(minute) / 10
             for y in area.minY...area.maxY {
@@ -48,7 +58,9 @@ public enum Advector {
                     grid[x, y] = frame.grid.sample(x: Double(x) - steps * vector.dx, y: Double(y) - steps * vector.dy)
                 }
             }
-            return RadarFrame(grid: grid, tile: frame.tile, time: frame.time.addingTimeInterval(TimeInterval(minute * 60)))
+            let time = frame.time.addingTimeInterval(TimeInterval(minute * 60))
+            frames.append(RadarFrame(grid: grid, tile: frame.tile, time: time))
         }
+        return frames
     }
 }

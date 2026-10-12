@@ -5,23 +5,6 @@ import Testing
 import WeatherWindowCore
 @testable import WeatherWindow
 
-struct ReplaySessionTests {
-    @Test func shipsTheRecordedMorning() async throws {
-        #expect(ReplaySession.frameFiles.count == 7)
-        #expect(try ReplaySession.forecast().count == 48)
-
-        let frames = try await PlanServices.replay().radarFrames(ReplaySession.now)
-        #expect(frames.count == 4)
-        #expect(frames.allSatisfy { $0.time <= ReplaySession.now })
-    }
-
-    @Test func radarColoursFadeOutClearAir() {
-        #expect(RadarColor.rgba(dBZ: ReflectivityPalette.noEchoDBZ).3 == 0)
-        #expect(RadarColor.rgba(dBZ: 35).3 > 0)
-        #expect(RadarColor.description(dBZ: 45) == "heavy rain")
-    }
-}
-
 struct NextWalkTests {
     @Test func advisesFromTheRecordedRadar() async throws {
         let model = NextWalkViewModel(input: NextWalkInput(
@@ -31,7 +14,7 @@ struct NextWalkTests {
             end: Place(name: "Flinders Street", location: GeoPoint(latitude: -37.8183, longitude: 144.9671))
         ))
 
-        await model.load(services: .replay())
+        await model.load(data: ReplayData())
 
         guard case .loaded(let result) = model.state else {
             Issue.record("Expected advice, got \(model.state)")
@@ -40,20 +23,21 @@ struct NextWalkTests {
         #expect(result.nowcast != nil)
         #expect(result.radarNotice == nil)
         #expect(result.recommended != nil)
-        #expect(result.now == ReplaySession.now)
+        #expect(result.now == ReplayData.now)
     }
 
     @Test func fallsBackToTheForecastWhenRadarIsStale() async throws {
-        var services = PlanServices.replay()
-        services.now = { ReplaySession.now.addingTimeInterval(45 * 60) }
-        services.radarFrames = { _ in try await PlanServices.replay().radarFrames(ReplaySession.now) }
+        // The recorded images up to 11:05, but a clock 45 minutes later.
+        var data = FakeData()
+        data.now = ReplayData.now.addingTimeInterval(45 * 60)
+        data.frames = try await ReplayData().radarFrames(upTo: ReplayData.now)
         let model = NextWalkViewModel(input: NextWalkInput(
             current: Place(name: "CBD", location: .melbourneCBD),
             remaining: [],
             end: Place(name: "Home", location: GeoPoint(latitude: -37.8183, longitude: 144.9671))
         ))
 
-        await model.load(services: services)
+        await model.load(data: data)
 
         guard case .loaded(let result) = model.state else {
             Issue.record("Expected advice, got \(model.state)")

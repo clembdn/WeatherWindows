@@ -1,87 +1,73 @@
 import MapKit
 import WeatherWindowCore
 
-/// Live place suggestions around Melbourne while the user types, then the chosen place's coordinates.
+// Live place suggestions around Melbourne while the user types, then the chosen place's coordinates.
 @Observable
-final class PlaceSearchService: NSObject {
-    struct Suggestion: Identifiable, Hashable {
-        let id: Int
-        let title: String
-        let subtitle: String
-    }
-
-    enum Status: Equatable {
-        case idle
-        case searching
-        case results
-        case noResults
-        case failed(String)
-    }
-
+final class PlaceSearchService: NSObject, MKLocalSearchCompleterDelegate {
     var query = "" {
-        didSet { search(for: query) }
+        didSet { search() }
     }
-    private(set) var suggestions: [Suggestion] = []
-    private(set) var status = Status.idle
+    private(set) var results: [MKLocalSearchCompletion] = []
+    private(set) var isSearching = false
+    private(set) var errorMessage: String?
 
     @ObservationIgnored private let completer = MKLocalSearchCompleter()
-    @ObservationIgnored private var completions: [MKLocalSearchCompletion] = []
-
-    private static let melbourne = MKCoordinateRegion(
-        center: GeoPoint.melbourneCBD.coordinate,
-        latitudinalMeters: 40_000,
-        longitudinalMeters: 40_000
-    )
 
     override init() {
         super.init()
         completer.delegate = self
-        completer.region = Self.melbourne
+        completer.region = MKCoordinateRegion(center: GeoPoint.melbourneCBD.coordinate,
+                                              latitudinalMeters: 40_000, longitudinalMeters: 40_000)
         completer.resultTypes = [.pointOfInterest, .address]
     }
 
-    private func search(for query: String) {
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
+    private func search() {
+        let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        errorMessage = nil
+        if text.isEmpty {
             completer.cancel()
-            completions = []
-            suggestions = []
-            status = .idle
-            return
-        }
-        status = .searching
-        completer.queryFragment = trimmed
-    }
-
-    /// Resolves a suggestion into a name and coordinates.
-    func place(for suggestion: Suggestion) async throws -> Place {
-        guard completions.indices.contains(suggestion.id) else { throw ServiceError.placeNotFound }
-        let request = MKLocalSearch.Request(completion: completions[suggestion.id])
-        request.region = Self.melbourne
-
-        do {
-            let response = try await MKLocalSearch(request: request).start()
-            guard let item = response.mapItems.first else { throw ServiceError.placeNotFound }
-            return Place(name: item.name ?? suggestion.title, location: GeoPoint(item.placemark.coordinate))
-        } catch {
-            throw ServiceError(error)
+            results = []
+            isSearching = false
+        } else {
+            isSearching = true
+            completer.queryFragment = text
         }
     }
-}
 
-extension PlaceSearchService: MKLocalSearchCompleterDelegate {
+    func place(for completion: MKLocalSearchCompletion) async throws -> Place {
+        try await resolve(MKLocalSearch.Request(completion: completion), name: completion.title)
+    }
+
+    // Used when the user presses Return instead of tapping a suggestion.
+    func placeForQuery() async throws -> Place {
+        let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if text.isEmpty {
+            throw ServiceError.placeNotFound
+        }
+        let request = MKLocalSearch.Request()
+        request.naturalLanguageQuery = text
+        request.region = completer.region
+        return try await resolve(request, name: text)
+    }
+
+    private func resolve(_ request: MKLocalSearch.Request, name: String) async throws -> Place {
+        let response = try await MKLocalSearch(request: request).start()
+        guard let item = response.mapItems.first else {
+            throw ServiceError.placeNotFound
+        }
+        return Place(name: item.name ?? name, location: GeoPoint(item.placemark.coordinate))
+    }
+
     func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
-        completions = completer.results
-        suggestions = completions.enumerated().map { index, completion in
-            Suggestion(id: index, title: completion.title, subtitle: completion.subtitle)
-        }
-        status = suggestions.isEmpty ? .noResults : .results
+        results = completer.results
+        isSearching = false
     }
 
-    func completer(_ completer: MKLocalSearchCompleter, didFailWithError error: any Error) {
+    func completer(_ completer: MKLocalSearchCompleter, didFailWithError error: Error) {
+        results = []
+        isSearching = false
         let serviceError = ServiceError(error)
-        completions = []
-        suggestions = []
-        status = serviceError == .placeNotFound ? .noResults : .failed(serviceError.errorDescription ?? "")
+        // "Not found" just means there is no suggestion, which the list already says.
+        errorMessage = serviceError == .placeNotFound ? nil : serviceError.errorDescription
     }
 }

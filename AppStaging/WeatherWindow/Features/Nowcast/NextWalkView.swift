@@ -1,25 +1,17 @@
-import SwiftData
+import NowcastKit
 import SwiftUI
-import UIKit
 
-/// "Leave now or wait?" for the next walk, with the radar collision view and its time scrubber.
+// "Leave now or wait?" for the next walk, with the radar collision view and its time slider.
 struct NextWalkView: View {
-    @Environment(\.modelContext) private var context
-    @Environment(LocationService.self) private var location
+    let data: any PlanDataSource
+
     @Environment(NotificationService.self) private var notifications
-    @Environment(\.openURL) private var openURL
-    @AppStorage(SettingsKey.paceFactor) private var paceFactor = 1.0
-    @AppStorage(AppMode.replayKey) private var replaySetting = false
     @State private var model: NextWalkViewModel
     @State private var reminderMessage: String?
 
-    init(input: NextWalkInput) {
+    init(input: NextWalkInput, data: any PlanDataSource) {
+        self.data = data
         _model = State(initialValue: NextWalkViewModel(input: input))
-    }
-
-    private var services: PlanServices {
-        PlanServices.current(isReplay: AppMode.isReplay(setting: replaySetting),
-                             context: context, location: location, paceFactor: paceFactor)
     }
 
     var body: some View {
@@ -28,16 +20,16 @@ struct NextWalkView: View {
             case .idle, .loading:
                 ProgressView("Checking the radar…")
             case .failed(let error):
-                ErrorRow(error: error) { Task { await model.load(services: services) } }
+                ErrorRow(error: error) {
+                    Task { await model.load(data: data) }
+                }
             case .loaded(let result):
                 Section {
                     DepartureAdviceCard(result: result, reminderMessage: reminderMessage) { date in
-                        Task { await remind(at: date) }
+                        remind(at: date)
                     }
                     if notifications.isDenied {
-                        Button("Turn On Notifications in Settings", systemImage: "gear") {
-                            if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
-                        }
+                        NotificationSettingsButton()
                     }
                 }
 
@@ -52,8 +44,7 @@ struct NextWalkView: View {
                     Section {
                         CollisionView(result: result, nowcast: nowcast, minuteOffset: model.minuteOffset)
                             .listRowInsets(EdgeInsets())
-                        TimeScrubber(minuteOffset: $model.minuteOffset, now: result.now,
-                                     lastObservation: nowcast.lastObservation)
+                        TimeSlider(minuteOffset: $model.minuteOffset, now: result.now, lastObservation: nowcast.lastObservation)
                     } header: {
                         Text("Rain and Your Route")
                     } footer: {
@@ -62,39 +53,37 @@ struct NextWalkView: View {
                 }
             }
         }
-        .replayBanner()
         .navigationTitle("Next Walk")
         .navigationBarTitleDisplayMode(.inline)
         .task {
+            // New radar images arrive every 10 minutes; the loop stops when the screen goes away.
             while !Task.isCancelled {
-                await model.load(services: services)
+                await model.load(data: data)
                 try? await Task.sleep(for: .seconds(10 * 60))
             }
         }
     }
 
-    private func remind(at date: Date) async {
-        let scheduled = await notifications.scheduleReminder(
-            id: "next-walk-\(model.input.current.name)",
-            at: date,
-            title: "Time to go",
-            body: "Leave \(model.input.current.name) now for a drier walk."
-        )
-        reminderMessage = scheduled
-            ? "Reminder set for \(AppClock.time(date))."
-            : "Notifications are off, so no reminder was set."
+    private func remind(at date: Date) {
+        Task {
+            reminderMessage = await notifications.scheduleReminder(
+                id: "next-walk-\(model.input.current.name)",
+                at: date,
+                body: "Leave \(model.input.current.name) now for a drier walk."
+            )
+        }
     }
 }
 
-/// Minutes from now on the collision view, from −30 (observed) to +30 (predicted).
-struct TimeScrubber: View {
+// Minutes from now on the collision view: −30 shows radar images, +30 the extrapolated rain.
+private struct TimeSlider: View {
     @Binding var minuteOffset: Double
     let now: Date
     let lastObservation: Date
 
     private var label: String {
         let time = now.addingTimeInterval(minuteOffset * 60)
-        return AppClock.time(time) + (time <= lastObservation ? " · observed" : " · predicted")
+        return Melbourne.time(time) + (time <= lastObservation ? " · observed" : " · predicted")
     }
 
     var body: some View {

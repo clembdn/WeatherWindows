@@ -15,18 +15,18 @@ public struct WeatherSample: Hashable, Sendable {
         self.precipitation = precipitation
     }
 
+    /// The 0...1 weight the solver uses for this hour.
     public var rainWeight: Double {
         RainWeight.hourly(probability: precipitationProbability, precipitation: precipitation)
     }
 }
 
-/// The Open-Meteo hourly forecast, whose parallel arrays are zipped into `WeatherSample`s.
+/// The Open-Meteo hourly forecast: its three parallel arrays are zipped into `WeatherSample`s.
 public struct OpenMeteoHourlyResponse: Decodable, Sendable {
-    public let location: GeoPoint
     public let samples: [WeatherSample]
 
     private enum CodingKeys: String, CodingKey {
-        case latitude, longitude, hourly
+        case hourly
     }
 
     private enum HourlyKeys: String, CodingKey {
@@ -37,11 +37,6 @@ public struct OpenMeteoHourlyResponse: Decodable, Sendable {
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        location = GeoPoint(
-            latitude: try container.decode(Double.self, forKey: .latitude),
-            longitude: try container.decode(Double.self, forKey: .longitude)
-        )
-
         let hourly = try container.nestedContainer(keyedBy: HourlyKeys.self, forKey: .hourly)
         let times = try hourly.decode([TimeInterval].self, forKey: .time)
         let probabilities = try hourly.decode([Double?].self, forKey: .precipitationProbability)
@@ -50,17 +45,18 @@ public struct OpenMeteoHourlyResponse: Decodable, Sendable {
         guard probabilities.count == times.count, precipitations.count == times.count else {
             throw DecodingError.dataCorrupted(DecodingError.Context(
                 codingPath: hourly.codingPath,
-                debugDescription: "Hourly arrays have different lengths: \(times.count) times, "
-                    + "\(probabilities.count) probabilities, \(precipitations.count) precipitations."
+                debugDescription: "The hourly arrays do not have the same length."
             ))
         }
 
-        samples = times.indices.map { index in
-            WeatherSample(
+        var samples: [WeatherSample] = []
+        for index in times.indices {
+            samples.append(WeatherSample(
                 time: Date(timeIntervalSince1970: times[index]),
                 precipitationProbability: probabilities[index] ?? 0,
                 precipitation: precipitations[index] ?? 0
-            )
+            ))
         }
+        self.samples = samples
     }
 }

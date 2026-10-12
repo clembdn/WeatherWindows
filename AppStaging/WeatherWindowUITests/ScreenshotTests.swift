@@ -30,7 +30,7 @@ nonisolated final class ScreenshotTests: XCTestCase {
                                     arguments: [String] = [], includesPlanFlow: Bool = false) {
         XCUIDevice.shared.appearance = appearance
         let app = XCUIApplication()
-        app.launchArguments = ["--sample-data"] + arguments
+        app.launchArguments = ["--sample-data", "-replayMode", "YES"] + arguments
         app.launch()
 
         capture(app, "\(prefix)-1-plan")

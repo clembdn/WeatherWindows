@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Sheet to add an errand; Save stays disabled until every field is valid.
+// Sheet to add an errand; Save stays disabled until every field is valid.
 struct ErrandFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(ErrandStore.self) private var store
@@ -23,17 +23,12 @@ struct ErrandFormView: View {
                     NavigationLink {
                         PlaceSearchView { place in model.place = place }
                     } label: {
-                        if let place = model.place {
-                            Label(place.name, systemImage: "mappin.and.ellipse")
-                        } else {
-                            Text("Choose a place")
-                                .foregroundStyle(.secondary)
-                        }
+                        PlaceLabel(place: model.place, placeholder: "Choose a place")
                     }
                 }
 
                 Section {
-                    Stepper(value: $model.durationMinutes, in: ErrandFormModel.durationRange, step: ErrandFormModel.durationStep) {
+                    Stepper(value: $model.durationMinutes, in: 5...120, step: 5) {
                         LabeledContent("Duration", value: "\(model.durationMinutes) min")
                     }
                 } footer: {
@@ -48,8 +43,14 @@ struct ErrandFormView: View {
                 } footer: {
                     ValidationMessage(text: model.hoursMessage)
                 }
+
+                if let saveErrorMessage {
+                    Section {
+                        ValidationMessage(text: "The errand couldn't be saved. \(saveErrorMessage)")
+                    }
+                }
             }
-            .environment(\.timeZone, AppClock.timeZone)
+            .environment(\.timeZone, Melbourne.timeZone)
             .navigationTitle("New Errand")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -61,38 +62,18 @@ struct ErrandFormView: View {
                         .disabled(!model.canSave)
                 }
             }
-            .alert("Couldn't Save Errand", isPresented: .init(
-                get: { saveErrorMessage != nil },
-                set: { if !$0 { saveErrorMessage = nil } }
-            )) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(saveErrorMessage ?? "")
-            }
         }
     }
 
     private func save() {
-        guard let draft = model.draft else { return }
-        switch store.add(draft) {
+        guard let errand = model.makeErrand() else { return }
+        switch store.add(errand) {
         case .added:
             dismiss()
         case .duplicateName:
             model.showDuplicateName()
         case .failed(let error):
             saveErrorMessage = error.localizedDescription
-        }
-    }
-}
-
-/// A field's error under it: icon and text, never colour alone.
-struct ValidationMessage: View {
-    let text: String?
-
-    var body: some View {
-        if let text {
-            Label(text, systemImage: "exclamationmark.triangle.fill")
-                .foregroundStyle(.red)
         }
     }
 }

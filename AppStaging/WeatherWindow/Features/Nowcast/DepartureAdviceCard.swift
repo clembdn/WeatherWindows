@@ -1,7 +1,7 @@
 import SolverKit
 import SwiftUI
 
-/// "Leave now" or "Wait 20 min", with the rain each choice means and a reminder button.
+// "Leave now" or "Wait 20 min", with the rain each choice means and a reminder button.
 struct DepartureAdviceCard: View {
     let result: NextWalkResult
     let reminderMessage: String?
@@ -16,15 +16,14 @@ struct DepartureAdviceCard: View {
             } else if let later = result.advice.bestLater {
                 Label("Wait \(PlanText.duration(result.advice.waitingTime(from: result.now)))", systemImage: "hourglass")
                     .font(.title2.bold())
-                choice("Leave at \(AppClock.time(later.departure))", schedule: later)
+                choice("Leave at \(Melbourne.time(later.departure))", schedule: later)
                 if let now = result.advice.leaveNow {
                     choice("Leave now", schedule: now)
                 }
-                Button("Remind Me at \(AppClock.time(later.departure))", systemImage: "bell") {
+                Button("Remind Me at \(Melbourne.time(later.departure))", systemImage: "bell") {
                     remind(later.departure)
                 }
                 .buttonStyle(.borderedProminent)
-                .accessibilityIdentifier("remind-me")
             } else if let now = result.advice.leaveNow {
                 Label("Leave Now", systemImage: "figure.walk.departure")
                     .font(.title2.bold())

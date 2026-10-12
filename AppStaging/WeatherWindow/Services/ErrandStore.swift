@@ -2,14 +2,16 @@ import Foundation
 import OSLog
 import SwiftData
 
-/// What happened when adding an errand, so the form can say exactly what went wrong.
+private let logger = Logger(subsystem: "edu.monash.cboudon.WeatherWindow", category: "data")
+
+// What happened when adding an errand, so the form can say exactly what went wrong.
 enum AddErrandResult {
     case added
     case duplicateName
-    case failed(any Error)
+    case failed(Error)
 }
 
-/// Owns writes to the errand library; views read it with `@Query`.
+// Adds and deletes errands; the views read them with @Query.
 @Observable
 final class ErrandStore {
     @ObservationIgnored private let context: ModelContext
@@ -18,17 +20,17 @@ final class ErrandStore {
         self.context = context
     }
 
-    func add(_ draft: ErrandDraft) -> AddErrandResult {
-        let normalizedName = SavedErrand.normalize(draft.name)
+    func add(_ errand: SavedErrand) -> AddErrandResult {
+        let normalizedName = errand.normalizedName
+        let sameName = FetchDescriptor<SavedErrand>(predicate: #Predicate { $0.normalizedName == normalizedName })
         do {
-            let sameName = FetchDescriptor<SavedErrand>(predicate: #Predicate { $0.normalizedName == normalizedName })
-            guard try context.fetchCount(sameName) == 0 else { return .duplicateName }
-
-            context.insert(SavedErrand(draft: draft))
+            if try context.fetchCount(sameName) > 0 {
+                return .duplicateName
+            }
+            context.insert(errand)
             try context.save()
             return .added
         } catch {
-            Logger.data.error("Errand could not be saved: \(error.localizedDescription, privacy: .public)")
             return .failed(error)
         }
     }
@@ -40,7 +42,7 @@ final class ErrandStore {
         do {
             try context.save()
         } catch {
-            Logger.data.error("Errand deletion could not be saved: \(error.localizedDescription, privacy: .public)")
+            logger.error("Errands could not be deleted: \(error.localizedDescription)")
         }
     }
 }

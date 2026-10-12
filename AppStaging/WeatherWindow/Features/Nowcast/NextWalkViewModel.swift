@@ -4,23 +4,23 @@ import NowcastKit
 import SolverKit
 import WeatherWindowCore
 
-/// Where you are and what is left to do.
+// Where you are and what is left to do.
 struct NextWalkInput {
     let current: Place
     let remaining: [Stop]
     let end: Place
 }
 
-/// The radar check: advice for leaving, and the data behind the collision view.
+// The radar check: advice for leaving, and the data behind the collision view.
 struct NextWalkResult {
     let now: Date
     let input: NextWalkInput
     let advice: DepartureAdvice
     let nowcast: Nowcast?
-    /// Shown when the radar could not be used and the hourly forecast took over.
+    // Shown when the radar could not be used and the hourly forecast took over.
     let radarNotice: String?
 
-    /// The schedule the advice recommends: waiting if worth it, otherwise leaving now.
+    // Waiting if it is worth it, otherwise leaving now.
     var recommended: ScoredSchedule? { advice.bestLater ?? advice.leaveNow }
 
     func name(of node: Node) -> String {
@@ -32,78 +32,76 @@ struct NextWalkResult {
     }
 }
 
-/// Re-plans the rest of the day from here over the next 30 minutes, with the radar nowcast.
+// Re-plans the rest of the day from here over the next 30 minutes, with the radar nowcast.
 @Observable
 final class NextWalkViewModel {
     let input: NextWalkInput
     private(set) var state = LoadState<NextWalkResult>.idle
-    /// Collision view time, in minutes from now (−30 to +30).
+    // Time shown by the collision view, in minutes from now (−30 to +30).
     var minuteOffset = 0.0
-
-    static let adviceWindow: TimeInterval = 30 * 60
 
     init(input: NextWalkInput) {
         self.input = input
     }
 
-    func load(services: PlanServices) async {
-        if case .loaded = state {} else { state = .loading }
+    func load(data: any PlanDataSource) async {
+        switch state {
+        case .loaded:
+            break // keep the last advice on screen while the radar refreshes
+        default:
+            state = .loading
+        }
 
         do {
-            let now = services.now()
+            let now = data.now
             let points = [input.current.location] + input.remaining.map(\.location) + [input.end.location]
-            let walkingTimes = try await services.walkingTimes(input.current.location, input.end.location, input.remaining)
+            let walkingTimes = try await data.walkingTimes(start: input.current.location, end: input.end.location,
+                                                           stops: input.remaining)
             let centre = GeoPoint.centroid(of: points) ?? input.current.location
-            let hourly = HourlyRainField(samples: try await services.hourlyForecast(centre))
-
-            var radarNotice: String?
-            var frames: [RadarFrame] = []
-            do {
-                frames = try await services.radarFrames(now)
-            } catch is CancellationError {
-                throw CancellationError()
-            } catch {
-                radarNotice = "Radar unavailable (\(ServiceError(error).errorDescription ?? "")). Using the hourly forecast only."
-            }
-
-            let outcome = await Self.makeNowcast(frames: frames, points: points, now: now, fallback: hourly)
-            var nowcast: Nowcast?
-            switch outcome {
-            case .ready(let ready):
-                nowcast = ready
-            case .stale(let last):
-                radarNotice = "The latest radar image is from \(AppClock.time(last)), too old to use. Using the hourly forecast only."
-            case .noFrames:
-                radarNotice = radarNotice ?? "No radar images are available. Using the hourly forecast only."
-            }
+            let hourly = HourlyRainField(samples: try await data.hourlyForecast(at: centre))
+            // Without radar images the advice still works, from the hourly forecast alone.
+            let frames = (try? await data.radarFrames(upTo: now)) ?? []
 
             let request = PlanRequest(
                 start: input.current.location,
                 end: input.end.location,
                 stops: input.remaining,
-                departureWindow: now...now.addingTimeInterval(Self.adviceWindow),
+                departureWindow: now...now.addingTimeInterval(30 * 60),
                 walkingTimes: walkingTimes,
-                timeZone: AppClock.timeZone
+                timeZone: Melbourne.timeZone
             )
-            let field: any RainField = nowcast?.field ?? hourly
-            let advice = await Self.advise(request, field: field)
+            let (outcome, advice) = await Self.advise(request, frames: frames, points: points, now: now, hourly: hourly)
+
+            var nowcast: Nowcast?
+            var radarNotice: String?
+            switch outcome {
+            case .ready(let ready):
+                nowcast = ready
+            case .stale(let last):
+                radarNotice = "The latest radar image is from \(Melbourne.time(last)), too old to use. Using the hourly forecast only."
+            case .noFrames:
+                radarNotice = "No radar images are available. Using the hourly forecast only."
+            case .outsideRadar:
+                radarNotice = "The radar only covers the Melbourne area. Using the hourly forecast only."
+            }
             state = .loaded(NextWalkResult(now: now, input: input, advice: advice, nowcast: nowcast, radarNotice: radarNotice))
-        } catch is CancellationError {
-            return
         } catch {
-            state = .failed(ServiceError(error))
+            let serviceError = ServiceError(error)
+            if serviceError != .cancelled {
+                state = .failed(serviceError)
+            }
         }
     }
 
-    /// Motion estimation and 30 extrapolated minutes, off the main actor.
+    // Measuring the motion, extrapolating 30 minutes and running the solver are heavy: off the main thread.
     @concurrent
-    private static func makeNowcast(frames: [RadarFrame], points: [GeoPoint], now: Date,
-                                    fallback: any RainField) async -> NowcastOutcome {
-        NowcastEngine.make(frames: frames, around: points, now: now, fallback: fallback)
-    }
-
-    @concurrent
-    private static func advise(_ request: PlanRequest, field: any RainField) async -> DepartureAdvice {
-        DepartureAdvisor.advice(for: request, scenarios: [field])
+    private static func advise(_ request: PlanRequest, frames: [RadarFrame], points: [GeoPoint], now: Date,
+                               hourly: HourlyRainField) async -> (NowcastOutcome, DepartureAdvice) {
+        let outcome = NowcastEngine.make(frames: frames, around: points, now: now, fallback: hourly)
+        var field: any RainField = hourly
+        if case .ready(let nowcast) = outcome {
+            field = nowcast.field
+        }
+        return (outcome, DepartureAdvisor.advice(for: request, scenarios: [field]))
     }
 }
