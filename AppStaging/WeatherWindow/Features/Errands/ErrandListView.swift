@@ -1,12 +1,13 @@
 import SwiftData
 import SwiftUI
 
-// The errand library: search, swipe to delete, and + to add.
+// The errand library: search, tap to edit, swipe to delete, and + to add.
 struct ErrandListView: View {
     @Environment(ErrandStore.self) private var store
     @Query(sort: \SavedErrand.name) private var errands: [SavedErrand]
     @State private var searchText = ""
     @State private var isAddingErrand = false
+    @State private var editedErrand: SavedErrand?
 
     private var visibleErrands: [SavedErrand] {
         let query = SavedErrand.normalize(searchText)
@@ -33,7 +34,12 @@ struct ErrandListView: View {
                 } else {
                     List {
                         ForEach(visibleErrands) { errand in
-                            ErrandRow(errand: errand)
+                            Button {
+                                editedErrand = errand
+                            } label: {
+                                ErrandRow(errand: errand)
+                            }
+                            .tint(.primary)
                         }
                         .onDelete(perform: deleteErrands)
                     }
@@ -53,6 +59,9 @@ struct ErrandListView: View {
             }
             .sheet(isPresented: $isAddingErrand) {
                 ErrandFormView()
+            }
+            .sheet(item: $editedErrand) { errand in
+                ErrandFormView(errand: errand)
             }
         }
     }

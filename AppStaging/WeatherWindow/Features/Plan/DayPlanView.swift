@@ -51,6 +51,9 @@ struct DayPlanView: View {
                     ResultsView(result: result)
                 }
             }
+            .onChange(of: errands.map(\.id)) {
+                model.keepSelected(onlyAmong: errands.map(\.id))
+            }
             .onChange(of: replayMode, initial: true) {
                 model.resetWindow(now: data.now)
             }

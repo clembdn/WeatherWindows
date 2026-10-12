@@ -82,6 +82,9 @@ struct ItineraryView: View {
         }
         .navigationTitle("Itinerary")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            isSaved = result.isSaved(schedule, in: context)
+        }
     }
 
     // The plan id is the reminder id, so asking again replaces the reminder instead of adding a second one.

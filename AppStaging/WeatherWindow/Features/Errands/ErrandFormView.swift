@@ -1,11 +1,19 @@
 import SwiftUI
 
-// Sheet to add an errand; Save stays disabled until every field is valid.
+// Sheet to add or edit an errand; Save stays disabled until every field is valid.
 struct ErrandFormView: View {
+    // Nil when adding a new errand.
+    let errand: SavedErrand?
+
     @Environment(\.dismiss) private var dismiss
     @Environment(ErrandStore.self) private var store
-    @State private var model = ErrandFormModel()
+    @State private var model: ErrandFormModel
     @State private var saveErrorMessage: String?
+
+    init(errand: SavedErrand? = nil) {
+        self.errand = errand
+        _model = State(initialValue: ErrandFormModel(errand: errand))
+    }
 
     var body: some View {
         NavigationStack {
@@ -51,7 +59,7 @@ struct ErrandFormView: View {
                 }
             }
             .environment(\.timeZone, Melbourne.timeZone)
-            .navigationTitle("New Errand")
+            .navigationTitle(errand == nil ? "New Errand" : "Edit Errand")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -66,9 +74,15 @@ struct ErrandFormView: View {
     }
 
     private func save() {
-        guard let errand = model.makeErrand() else { return }
-        switch store.add(errand) {
-        case .added:
+        guard let edited = model.makeErrand() else { return }
+        let result: SaveErrandResult
+        if let errand {
+            result = store.update(errand, with: edited)
+        } else {
+            result = store.add(edited)
+        }
+        switch result {
+        case .saved:
             dismiss()
         case .duplicateName:
             model.showDuplicateName()

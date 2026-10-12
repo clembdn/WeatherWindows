@@ -39,8 +39,21 @@ struct PlanResult {
         node.location(start: start.location, end: end.location, stops: stops)
     }
 
-    // Stores the chosen schedule as a DayPlan whose stops copy today's values.
+    // True when Saved Plans already has this schedule: same times and same errands in the same order.
+    func isSaved(_ schedule: ScoredSchedule, in context: ModelContext) -> Bool {
+        let departure = schedule.departure
+        let returnTime = schedule.returnTime
+        let sameTimes = FetchDescriptor<DayPlan>(predicate: #Predicate { $0.departure == departure && $0.returnTime == returnTime })
+        let plans = (try? context.fetch(sameTimes)) ?? []
+        let names = schedule.order.map(\.name)
+        return plans.contains { $0.orderedStops.map(\.name) == names }
+    }
+
+    // Stores the chosen schedule as a DayPlan whose stops copy today's values, once only.
     func save(_ schedule: ScoredSchedule, in context: ModelContext) throws {
+        if isSaved(schedule, in: context) {
+            return
+        }
         let plan = DayPlan(departure: schedule.departure, returnTime: schedule.returnTime,
                            robustExposure: schedule.robustExposure, start: start, end: endsAtStart ? nil : end)
         context.insert(plan)
@@ -107,6 +120,14 @@ final class DayPlanViewModel {
             selectionMessage = "You can plan up to \(Self.maxErrands) errands at once."
         } else {
             selectedIDs.insert(errand.id)
+        }
+    }
+
+    // An errand deleted in the Errands tab must not keep one of the four places.
+    func keepSelected(onlyAmong ids: [UUID]) {
+        selectedIDs = selectedIDs.filter { ids.contains($0) }
+        if selectedIDs.count < Self.maxErrands {
+            selectionMessage = nil
         }
     }
 

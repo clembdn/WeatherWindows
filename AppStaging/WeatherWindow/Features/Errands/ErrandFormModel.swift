@@ -1,6 +1,6 @@
 import Foundation
 
-// The new-errand form: its values and validation rules, kept out of the view so they can be tested.
+// The errand form: its values and validation rules, kept out of the view so they can be tested.
 @Observable
 final class ErrandFormModel {
     var name = "" {
@@ -12,9 +12,15 @@ final class ErrandFormModel {
     var closing: Date
     var duplicateNameMessage: String?
 
-    init(day: Date = .now) {
-        opening = Melbourne.date(minute: 9 * 60, on: day)
-        closing = Melbourne.date(minute: 17 * 60, on: day)
+    // Empty for a new errand (open 9:00–17:00), or filled with the values of the errand being edited.
+    init(errand: SavedErrand? = nil, day: Date = .now) {
+        opening = Melbourne.date(minute: errand?.openingMinute ?? 9 * 60, on: day)
+        closing = Melbourne.date(minute: errand?.closingMinute ?? 17 * 60, on: day)
+        if let errand {
+            name = errand.name
+            place = Place(name: errand.placeName, location: errand.location)
+            durationMinutes = errand.durationMinutes
+        }
     }
 
     var openingMinute: Int { Melbourne.minute(of: opening) }

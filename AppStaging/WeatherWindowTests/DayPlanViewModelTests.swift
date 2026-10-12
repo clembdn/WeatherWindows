@@ -29,6 +29,23 @@ struct DayPlanViewModelTests {
         #expect(!model.selectedIDs.contains(errands[4].id))
     }
 
+    @Test func forgetsADeletedErrand() {
+        let model = morningModel()
+        let errands = insertErrands(["Post", "Coles", "Library", "Gym", "Chemist"])
+        for errand in errands {
+            model.toggle(errand)
+        }
+
+        // "Gym" is deleted in the Errands tab, which frees a place for "Chemist".
+        model.keepSelected(onlyAmong: [errands[0].id, errands[1].id, errands[2].id, errands[4].id])
+        #expect(model.selectionMessage == nil)
+        model.toggle(errands[4])
+
+        #expect(model.selectedIDs.count == 4)
+        #expect(model.selectedIDs.contains(errands[4].id))
+        #expect(!model.selectedIDs.contains(errands[3].id))
+    }
+
     @Test func calculatesAFrontierWithFakeServices() async throws {
         let model = morningModel()
 
@@ -105,6 +122,19 @@ struct DayPlanViewModelTests {
         #expect(plan.orderedStops.map(\.name) == schedule.order.map(\.name))
         #expect(plan.orderedStops.allSatisfy { $0.errand != nil })
         #expect(plan.departure == schedule.departure)
+    }
+
+    @Test func savesTheSamePlanOnlyOnce() async throws {
+        let model = morningModel()
+        await model.calculate(errands: insertErrands(["Post", "Coles"]), data: FakeData())
+        let result = try #require(model.result)
+        let schedule = try #require(result.fastest)
+
+        try result.save(schedule, in: context)
+        try result.save(schedule, in: context)
+
+        #expect(try context.fetchCount(FetchDescriptor<DayPlan>()) == 1)
+        #expect(result.isSaved(schedule, in: context))
     }
 
     // MARK: Helpers

@@ -37,6 +37,19 @@ struct ErrandFormModelTests {
         #expect(!model.canSave)
     }
 
+    @Test func fillsTheFormFromAnErrand() {
+        let errand = SavedErrand(name: "Library", place: place, durationMinutes: 30, openingMinute: 10 * 60, closingMinute: 18 * 60)
+
+        let model = ErrandFormModel(errand: errand)
+
+        #expect(model.name == "Library")
+        #expect(model.place == place)
+        #expect(model.durationMinutes == 30)
+        #expect(model.openingMinute == 10 * 60)
+        #expect(model.closingMinute == 18 * 60)
+        #expect(model.canSave)
+    }
+
     private func filledModel() -> ErrandFormModel {
         let model = ErrandFormModel()
         model.name = "Library"
