@@ -93,7 +93,7 @@ jobs:
           jq -r '.[].attachments[] | [.exportedFileName, .suggestedHumanReadableName] | @tsv' manifest.json |
             while IFS=$'\t' read -r file name; do
               case "$name" in
-                *.png|*.txt) mv "$file" "$(echo "$name" | sed -E 's/_[0-9]+_[0-9A-Fa-f-]+\.(png|txt)$/.\1/')" ;;
+                *.png|*.txt) mv "$file" "$(echo "$name" | sed -E 's/_[0-9]+_[0-9A-Fa-f-]+\.(png|txt)$/.\1/; s/[^A-Za-z0-9._-]+/-/g')" ;;
                 *) rm -f "$file" ;;
               esac
             done

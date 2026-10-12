@@ -38,13 +38,13 @@ nonisolated final class ScreenshotTests: XCTestCase {
         tap(app.tabBars.buttons["Errands"])
         capture(app, "\(prefix)-2-errands")
 
+        // The first launch on a cold simulator can be slow: wait for the sheet to open, then to close.
         tap(app.buttons["Add Errand"].firstMatch)
+        let sheet = app.navigationBars["New Errand"]
+        XCTAssertTrue(sheet.waitForExistence(timeout: 30), "New Errand sheet never opened")
         capture(app, "\(prefix)-3-new-errand")
-        if app.buttons["Cancel"].waitForExistence(timeout: 5) {
-            app.buttons["Cancel"].tap()
-        } else {
-            app.swipeDown(velocity: .fast)
-        }
+        tap(app.buttons["Cancel"])
+        XCTAssertTrue(sheet.waitForNonExistence(timeout: 30), "New Errand sheet never closed")
 
         tap(app.tabBars.buttons["About"])
         capture(app, "\(prefix)-4-about")
