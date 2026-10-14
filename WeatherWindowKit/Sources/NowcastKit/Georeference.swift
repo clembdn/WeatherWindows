@@ -17,4 +17,14 @@ public struct Georeference: Sendable, Hashable {
         let worldY = (1 - log(tan(latitude) + 1 / cos(latitude)) / .pi) / 2 * worldSize
         return (worldX - Double(tile.x * tile.size), worldY - Double(tile.y * tile.size))
     }
+
+    /// The place at a pixel position of the tile (the opposite of `pixel(for:)`), to draw radar pixels on a map.
+    public func point(forPixelX x: Double, y: Double) -> GeoPoint {
+        let worldSize = Double(tile.size) * pow(2, Double(tile.zoom))
+        let worldX = x + Double(tile.x * tile.size)
+        let worldY = y + Double(tile.y * tile.size)
+        let longitude = worldX / worldSize * 360 - 180
+        let latitude = atan(sinh(.pi * (1 - 2 * worldY / worldSize))) * 180 / .pi
+        return GeoPoint(latitude: latitude, longitude: longitude)
+    }
 }

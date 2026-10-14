@@ -1,3 +1,4 @@
+import ForecastKit
 import Foundation
 import NowcastKit
 import SolverKit
@@ -45,5 +46,25 @@ struct NextWalkTests {
         }
         #expect(result.nowcast == nil)
         #expect(result.radarNotice?.contains("too old") == true)
+    }
+
+    @Test func alertsOnceWhenRainHeadsForTheNextWalk() async {
+        // Heavy rain for the whole hour and no radar: every walk in the next 30 minutes is wet.
+        var data = FakeData()
+        data.now = ReplayData.now
+        data.forecast = [WeatherSample(time: data.now.addingTimeInterval(1800), precipitationProbability: 100, precipitation: 3),
+                         WeatherSample(time: data.now.addingTimeInterval(5400), precipitationProbability: 100, precipitation: 3)]
+        let model = NextWalkViewModel(input: NextWalkInput(
+            current: Place(name: "CBD", location: .melbourneCBD),
+            remaining: [],
+            end: Place(name: "Home", location: GeoPoint(latitude: -37.8183, longitude: 144.9671))
+        ))
+        await model.load(data: data)
+
+        #expect(model.rainAlert() == nil)
+        model.alertsWhenRainComes = true
+        #expect(model.rainAlert()?.hasPrefix("Rain is expected on your walk to Home") == true)
+        await model.load(data: data)
+        #expect(model.rainAlert() == nil)
     }
 }

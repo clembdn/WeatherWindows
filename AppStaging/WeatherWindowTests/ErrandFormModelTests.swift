@@ -50,6 +50,19 @@ struct ErrandFormModelTests {
         #expect(model.canSave)
     }
 
+    @Test func fillsTheFormFromADescription() {
+        let model = ErrandFormModel()
+
+        // What the on-device model might read in "post office, about 12 minutes, open 9 till midnight".
+        model.fill(name: "Post office", durationMinutes: 12, openingHour: 9, closingHour: 30)
+
+        #expect(model.name == "Post office")
+        #expect(model.durationMinutes == 10)
+        #expect(model.openingMinute == 9 * 60)
+        #expect(model.closingMinute == 23 * 60)
+        #expect(model.hoursMessage == nil)
+    }
+
     private func filledModel() -> ErrandFormModel {
         let model = ErrandFormModel()
         model.name = "Library"

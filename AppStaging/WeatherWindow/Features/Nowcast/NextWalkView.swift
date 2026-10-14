@@ -8,6 +8,7 @@ struct NextWalkView: View {
     @Environment(NotificationService.self) private var notifications
     @State private var model: NextWalkViewModel
     @State private var reminderMessage: String?
+    @State private var showsMap = true
 
     init(input: NextWalkInput, data: any PlanDataSource) {
         self.data = data
@@ -33,6 +34,12 @@ struct NextWalkView: View {
                     }
                 }
 
+                Section {
+                    Toggle("Alert Me If Rain Is Coming", isOn: $model.alertsWhenRainComes)
+                } footer: {
+                    Text("While this screen is open, the radar is checked every 10 minutes and you get a notification when rain heads for your next walk.")
+                }
+
                 if let notice = result.radarNotice {
                     Section {
                         Label(notice, systemImage: "exclamationmark.triangle")
@@ -42,16 +49,24 @@ struct NextWalkView: View {
 
                 if let nowcast = result.nowcast {
                     Section {
-                        CollisionView(result: result, nowcast: nowcast, minuteOffset: model.minuteOffset)
+                        Picker("View", selection: $showsMap) {
+                            Text("Map").tag(true)
+                            Text("Radar Grid").tag(false)
+                        }
+                        .pickerStyle(.segmented)
+                        CollisionView(result: result, nowcast: nowcast, minuteOffset: model.minuteOffset, showsMap: showsMap)
                             .listRowInsets(EdgeInsets())
                         TimeSlider(minuteOffset: $model.minuteOffset, now: result.now, lastObservation: nowcast.lastObservation)
                     } header: {
                         Text("Rain and Your Route")
                     } footer: {
-                        Text("Left of now: radar images. Right of now: extrapolated rain, paler as it gets less certain. Orange dot: you.")
+                        Text("Left of now: radar images. Right of now: extrapolated rain, paler as it gets less certain. Orange dot: you. The radar grid also works offline.")
                     }
                 }
             }
+        }
+        .onChange(of: model.alertsWhenRainComes) {
+            Task { await sendRainAlert() }
         }
         .navigationTitle("Next Walk")
         .navigationBarTitleDisplayMode(.inline)
@@ -59,8 +74,15 @@ struct NextWalkView: View {
             // New radar images arrive every 10 minutes; the loop stops when the screen goes away.
             while !Task.isCancelled {
                 await model.load(data: data)
+                await sendRainAlert()
                 try? await Task.sleep(for: .seconds(10 * 60))
             }
+        }
+    }
+
+    private func sendRainAlert() async {
+        if let alert = model.rainAlert() {
+            await notifications.alertNow(id: "rain-alert", body: alert)
         }
     }
 

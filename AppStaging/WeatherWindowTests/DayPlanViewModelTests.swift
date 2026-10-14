@@ -1,3 +1,4 @@
+import ForecastKit
 import Foundation
 import SolverKit
 import SwiftData
@@ -137,7 +138,62 @@ struct DayPlanViewModelTests {
         #expect(result.isSaved(schedule, in: context))
     }
 
+    @Test func learnsTheUsualTradeOff() async throws {
+        let result = try await rainyMorningResult()
+        let fastest = try #require(result.fastest)
+        let driest = try #require(result.driest)
+        #expect(result.frontier.count > 2)
+
+        #expect(result.tradeOff(of: fastest) == 0)
+        #expect(result.tradeOff(of: driest) == 1)
+        #expect(result.usualChoice(savedTradeOffs: [1]) == nil)
+        #expect(result.usualChoice(savedTradeOffs: [1, 1])?.id == driest.id)
+        #expect(result.usualChoice(savedTradeOffs: [0, 0, 0])?.id == fastest.id)
+    }
+
+    @Test func sharesThePlanAsText() async throws {
+        let result = try await rainyMorningResult()
+        let schedule = try #require(result.driest)
+
+        let text = result.shareText(for: schedule)
+
+        #expect(text.hasPrefix("Leave Current Location at"))
+        #expect(text.contains("1. Post"))
+        #expect(text.contains("Back at Current Location"))
+    }
+
+    @Test func scoresWithTheEnsembleWhenItIsAvailable() async throws {
+        let model = morningModel()
+        model.usesEnsemble = true
+        var data = FakeData()
+        let json = """
+            {"hourly": {"time": [1791939600], "precipitation": [0], "precipitation_member01": [2]}}
+            """
+        data.ensemble = try JSONDecoder().decode(OpenMeteoEnsembleResponse.self, from: Data(json.utf8))
+
+        await model.calculate(errands: insertErrands(["Post"]), data: data)
+        let withEnsemble = try #require(model.result)
+        #expect(withEnsemble.usesEnsemble)
+        #expect(withEnsemble.scenarios.count == 5)
+
+        // Offline ensemble: the shifted forecast is used instead, and the plan is still calculated.
+        data.ensemble = nil
+        await model.calculate(errands: insertErrands(["Coles"]), data: data)
+        let withoutEnsemble = try #require(model.result)
+        #expect(!withoutEnsemble.usesEnsemble)
+        #expect(withoutEnsemble.scenarios.count == 5)
+    }
+
     // MARK: Helpers
+
+    // Rain from 10:00 to 11:00: leaving at 10:00 is fastest but wet, leaving later is slower but drier.
+    private func rainyMorningResult() async throws -> PlanResult {
+        let model = morningModel()
+        var data = FakeData()
+        data.forecast = [WeatherSample(time: at(11, 0), precipitationProbability: 100, precipitation: 1)]
+        await model.calculate(errands: insertErrands(["Post"]), data: data)
+        return try #require(model.result)
+    }
 
     private let place = Place(name: "Melbourne Central", location: GeoPoint(latitude: -37.8102, longitude: 144.9628))
 

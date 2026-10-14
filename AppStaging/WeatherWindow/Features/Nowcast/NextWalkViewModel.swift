@@ -39,6 +39,10 @@ final class NextWalkViewModel {
     private(set) var state = LoadState<NextWalkResult>.idle
     // Time shown by the collision view, in minutes from now (−30 to +30).
     var minuteOffset = 0.0
+    // Set by the "Alert Me" toggle.
+    var alertsWhenRainComes = false
+    // Whether the last check already found rain, so the user is alerted once, not every 10 minutes.
+    @ObservationIgnored private var foundRain = false
 
     init(input: NextWalkInput) {
         self.input = input
@@ -91,6 +95,24 @@ final class NextWalkViewModel {
                 state = .failed(serviceError)
             }
         }
+    }
+
+    // The alert to send when the walk you would start now has just turned rainy; nil otherwise.
+    func rainAlert() -> String? {
+        guard alertsWhenRainComes, case .loaded(let result) = state,
+              let leaveNow = result.advice.leaveNow, let leg = leaveNow.legs.first else { return nil }
+        let isRainy = !PlanText.isDry(leg.exposureByScenario.max() ?? 0)
+        let alreadyFound = foundRain
+        foundRain = isRainy
+        if !isRainy || alreadyFound {
+            return nil
+        }
+
+        var text = "Rain is expected on your walk to \(result.name(of: leg.to))."
+        if let later = result.advice.bestLater {
+            text += " Leave at \(Melbourne.time(later.departure)) to stay drier."
+        }
+        return text
     }
 
     // Measuring the motion, extrapolating 30 minutes and running the solver are heavy: off the main thread.

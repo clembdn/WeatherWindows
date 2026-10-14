@@ -4,11 +4,13 @@ import SwiftUI
 import UIKit
 import WeatherWindowCore
 
-// Rain observed or predicted at the slider's time, your route, and where you will be then.
+// Rain observed or predicted at the slider's time, your route, and where you will be then,
+// on an Apple map or as a plain radar grid (which also works offline).
 struct CollisionView: View {
     let result: NextWalkResult
     let nowcast: Nowcast
     let minuteOffset: Double
+    let showsMap: Bool
 
     private var time: Date { result.now.addingTimeInterval(minuteOffset * 60) }
     private var isPredicted: Bool { time > nowcast.lastObservation }
@@ -70,32 +72,38 @@ struct CollisionView: View {
         let you = CGPoint(x: youPixel.x, y: youPixel.y)
         let background = Color(uiColor: .secondarySystemBackground)
 
-        Canvas { context, size in
-            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(background))
+        Group {
+            if showsMap {
+                RadarMapView(grid: shownGrid, region: region, opacity: opacity, route: routePoints, you: yourPosition)
+            } else {
+                Canvas { context, size in
+                    context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(background))
 
-            // Everything is drawn in radar pixels, then scaled to the size of the view.
-            let scale = size.width / Double(region.maxX - region.minX + 1)
-            context.scaleBy(x: scale, y: scale)
-            context.translateBy(x: -Double(region.minX), y: -Double(region.minY))
+                    // Everything is drawn in radar pixels, then scaled to the size of the view.
+                    let scale = size.width / Double(region.maxX - region.minX + 1)
+                    context.scaleBy(x: scale, y: scale)
+                    context.translateBy(x: -Double(region.minX), y: -Double(region.minY))
 
-            for cell in cells {
-                context.fill(Path(CGRect(x: cell.x, y: cell.y, width: 1.05, height: 1.05)), with: .color(cell.color))
+                    for cell in cells {
+                        context.fill(Path(CGRect(x: cell.x, y: cell.y, width: 1.05, height: 1.05)), with: .color(cell.color))
+                    }
+
+                    var path = Path()
+                    path.addLines(route)
+                    context.stroke(path, with: .color(.primary),
+                                   style: StrokeStyle(lineWidth: 3 / scale, lineCap: .round, lineJoin: .round))
+                    for point in route {
+                        context.fill(Path(ellipseIn: CGRect(x: point.x - 4 / scale, y: point.y - 4 / scale,
+                                                            width: 8 / scale, height: 8 / scale)), with: .color(.primary))
+                    }
+                    context.fill(Path(ellipseIn: CGRect(x: you.x - 9 / scale, y: you.y - 9 / scale,
+                                                        width: 18 / scale, height: 18 / scale)), with: .color(.white))
+                    context.fill(Path(ellipseIn: CGRect(x: you.x - 6 / scale, y: you.y - 6 / scale,
+                                                        width: 12 / scale, height: 12 / scale)), with: .color(.orange))
+                }
+                .aspectRatio(Double(region.maxX - region.minX + 1) / Double(region.maxY - region.minY + 1), contentMode: .fit)
             }
-
-            var path = Path()
-            path.addLines(route)
-            context.stroke(path, with: .color(.primary),
-                           style: StrokeStyle(lineWidth: 3 / scale, lineCap: .round, lineJoin: .round))
-            for point in route {
-                context.fill(Path(ellipseIn: CGRect(x: point.x - 4 / scale, y: point.y - 4 / scale,
-                                                    width: 8 / scale, height: 8 / scale)), with: .color(.primary))
-            }
-            context.fill(Path(ellipseIn: CGRect(x: you.x - 9 / scale, y: you.y - 9 / scale,
-                                                width: 18 / scale, height: 18 / scale)), with: .color(.white))
-            context.fill(Path(ellipseIn: CGRect(x: you.x - 6 / scale, y: you.y - 6 / scale,
-                                                width: 12 / scale, height: 12 / scale)), with: .color(.orange))
         }
-        .aspectRatio(Double(region.maxX - region.minX + 1) / Double(region.maxY - region.minY + 1), contentMode: .fit)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(alignment: .topLeading) {
             Text(Melbourne.time(time) + (isPredicted ? " · predicted" : " · observed"))
@@ -104,7 +112,8 @@ struct CollisionView: View {
                 .background(.regularMaterial, in: Capsule())
                 .padding(8)
         }
-        .overlay(alignment: .bottomTrailing) {
+        .overlay(alignment: .topTrailing) {
+            // Top corner, so Apple's own map credits at the bottom stay visible.
             Text("Radar: RainViewer")
                 .font(.caption2)
                 .padding(4)

@@ -12,6 +12,7 @@ protocol PlanDataSource {
     func currentLocation() async throws -> GeoPoint
     func walkingTimes(start: GeoPoint, end: GeoPoint, stops: [Stop]) async throws -> [Node: [Node: TimeInterval]]
     func hourlyForecast(at point: GeoPoint) async throws -> [WeatherSample]
+    func ensembleForecast(at point: GeoPoint) async throws -> OpenMeteoEnsembleResponse
     func radarFrames(upTo time: Date) async throws -> [RadarFrame]
     func routeLine(from origin: GeoPoint, to destination: GeoPoint) async -> [GeoPoint]
 }
@@ -35,6 +36,10 @@ struct LiveData: PlanDataSource {
 
     func hourlyForecast(at point: GeoPoint) async throws -> [WeatherSample] {
         try await OpenMeteoService().hourlyForecast(at: point)
+    }
+
+    func ensembleForecast(at point: GeoPoint) async throws -> OpenMeteoEnsembleResponse {
+        try await OpenMeteoService().ensemble(at: point)
     }
 
     // Four images give three pairs to measure the motion of the rain.
@@ -86,11 +91,24 @@ struct ReplayData: PlanDataSource {
         return try JSONDecoder().decode(OpenMeteoHourlyResponse.self, from: Data(contentsOf: url)).samples
     }
 
-    // Radar tiles from 10:30 to 11:30; only those up to `time` are used.
+    // No ensemble was recorded that morning: the planner falls back to the shifted forecast.
+    func ensembleForecast(at point: GeoPoint) async throws -> OpenMeteoEnsembleResponse {
+        throw ServiceError.other("No ensemble forecast was recorded for the replay.")
+    }
+
+    // The radar tiles of the whole day, one every 10 minutes; only the last four up to `time` are used.
     func radarFrames(upTo time: Date) async throws -> [RadarFrame] {
+        try await recordedSource().frames(upTo: time, count: 4)
+    }
+
+    // Every tile of the day, for the nowcast accuracy screen.
+    func allRadarFrames() async throws -> [RadarFrame] {
+        try await recordedSource().frames(upTo: .distantFuture, count: 200)
+    }
+
+    private func recordedSource() throws -> RecordedFrameSource {
         let files = bundle.urls(forResourcesWithExtension: "tile", subdirectory: nil) ?? []
-        let source = RecordedFrameSource(files: files, decoder: RadarTileDecoder(palette: try .universalBlue()))
-        return try await source.frames(upTo: time, count: 4)
+        return RecordedFrameSource(files: files, decoder: RadarTileDecoder(palette: try .universalBlue()))
     }
 
     func routeLine(from origin: GeoPoint, to destination: GeoPoint) async -> [GeoPoint] {

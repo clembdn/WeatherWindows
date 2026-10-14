@@ -8,6 +8,8 @@ final class DayPlan {
     var departure: Date
     var returnTime: Date
     var robustExposure: Double
+    // Where the chosen plan was among the trade-offs: 0 the fastest, 1 the driest. Learns what the user prefers.
+    var tradeOff = 0.5
     var startName: String
     var startLatitude: Double
     var startLongitude: Double

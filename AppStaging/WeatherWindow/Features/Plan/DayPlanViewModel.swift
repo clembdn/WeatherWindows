@@ -12,8 +12,9 @@ struct PlanResult {
     let endsAtStart: Bool
     let errands: [SavedErrand]
     let stops: [Stop]
-    // The forecast and its four shifted copies the plans were scored against.
+    // The forecast and its four shifted copies, or five runs of the ensemble, that the plans were scored against.
     let scenarios: [any RainField]
+    let usesEnsemble: Bool
     let data: any PlanDataSource
 
     var frontier: [ScoredSchedule] {
@@ -39,6 +40,34 @@ struct PlanResult {
         node.location(start: start.location, end: end.location, stops: stops)
     }
 
+    // Where a schedule sits among the trade-offs: 0 for the fastest, 1 for the driest.
+    func tradeOff(of schedule: ScoredSchedule) -> Double {
+        guard frontier.count > 1, let index = frontier.firstIndex(where: { $0.id == schedule.id }) else { return 0.5 }
+        return Double(index) / Double(frontier.count - 1)
+    }
+
+    // The plan closest to the trade-off the user usually saves, once two plans have been saved.
+    func usualChoice(savedTradeOffs: [Double]) -> ScoredSchedule? {
+        guard savedTradeOffs.count >= 2, !frontier.isEmpty else { return nil }
+        var total = 0.0
+        for value in savedTradeOffs {
+            total += value
+        }
+        let average = total / Double(savedTradeOffs.count)
+        return frontier[Int((average * Double(frontier.count - 1)).rounded())]
+    }
+
+    // The plan as plain text, for the share sheet.
+    func shareText(for schedule: ScoredSchedule) -> String {
+        var lines = ["Leave \(start.name) at \(Melbourne.time(schedule.departure))"]
+        for (index, visit) in schedule.visits.enumerated() {
+            lines.append("\(index + 1). \(visit.stop.name), \(Melbourne.time(visit.serviceStart))–\(Melbourne.time(visit.departure))")
+        }
+        lines.append("Back at \(end.name) at \(Melbourne.time(schedule.returnTime)) · \(PlanText.rain(schedule.robustExposure))")
+        lines.append("Planned with WeatherWindow")
+        return lines.joined(separator: "\n")
+    }
+
     // True when Saved Plans already has this schedule: same times and same errands in the same order.
     func isSaved(_ schedule: ScoredSchedule, in context: ModelContext) -> Bool {
         let departure = schedule.departure
@@ -56,6 +85,7 @@ struct PlanResult {
         }
         let plan = DayPlan(departure: schedule.departure, returnTime: schedule.returnTime,
                            robustExposure: schedule.robustExposure, start: start, end: endsAtStart ? nil : end)
+        plan.tradeOff = tradeOff(of: schedule)
         context.insert(plan)
         for (rank, visit) in schedule.visits.enumerated() {
             if let errand = errands.first(where: { $0.id == visit.stop.id }) {
@@ -82,6 +112,8 @@ final class DayPlanViewModel {
     var endPlace: Place?
     var windowStart: Date
     var windowEnd: Date
+    // Set by the view from the About setting.
+    var usesEnsemble = false
 
     private(set) var state = LoadState<PlanResult>.idle
     private(set) var progress: String?
@@ -188,6 +220,16 @@ final class DayPlanViewModel {
             progress = "Getting the forecast…"
             let centre = GeoPoint.centroid(of: stops.map(\.location)) ?? start.location
             let forecast = HourlyRainField(samples: try await data.hourlyForecast(at: centre))
+            var scenarios = ShiftedRainField.scenarios(around: forecast)
+            var usedEnsemble = false
+            if usesEnsemble {
+                progress = "Getting the 40 forecast runs…"
+                // Without the ensemble, the shifted forecast still gives robust scores.
+                if let ensemble = try? await data.ensembleForecast(at: centre) {
+                    scenarios = ensemble.scenarios(from: windowStart, to: windowEnd.addingTimeInterval(3 * 3600))
+                    usedEnsemble = true
+                }
+            }
 
             progress = "Comparing plans…"
             let request = PlanRequest(
@@ -198,11 +240,11 @@ final class DayPlanViewModel {
                 walkingTimes: walkingTimes,
                 timeZone: Melbourne.timeZone
             )
-            let scenarios = ShiftedRainField.scenarios(around: forecast)
             let outcome = await Self.rankSchedules(request, scenarios: scenarios)
 
             state = .loaded(PlanResult(outcome: outcome, start: start, end: end, endsAtStart: endsAtStart,
-                                       errands: errands, stops: stops, scenarios: scenarios, data: data))
+                                       errands: errands, stops: stops, scenarios: scenarios, usesEnsemble: usedEnsemble,
+                                       data: data))
         } catch {
             let serviceError = ServiceError(error)
             if serviceError == .cancelled {

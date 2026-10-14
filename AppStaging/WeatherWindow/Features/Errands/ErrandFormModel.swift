@@ -54,6 +54,14 @@ final class ErrandFormModel {
                            openingMinute: openingMinute, closingMinute: closingMinute)
     }
 
+    // Values read from a sentence by the on-device model, brought back into the ranges of the form.
+    func fill(name: String, durationMinutes: Int, openingHour: Int, closingHour: Int) {
+        self.name = name
+        self.durationMinutes = min(120, max(5, Int((Double(durationMinutes) / 5).rounded()) * 5))
+        opening = Melbourne.date(minute: min(22, max(0, openingHour)) * 60, on: opening)
+        closing = Melbourne.date(minute: min(23, max(1, closingHour)) * 60, on: opening)
+    }
+
     func showDuplicateName() {
         duplicateNameMessage = "You already have an errand called “\(trimmedName)”."
     }

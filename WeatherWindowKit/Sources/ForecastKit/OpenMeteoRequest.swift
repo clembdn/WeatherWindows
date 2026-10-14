@@ -18,4 +18,21 @@ public enum OpenMeteoRequest {
         ]
         return components.url
     }
+
+    /// The 40 runs of the ICON ensemble (hourly precipitation only), for the robustness scenarios.
+    public static func ensembleURL(at point: GeoPoint, forecastDays: Int = 2) -> URL? {
+        var components = URLComponents()
+        components.scheme = "https"
+        components.host = "ensemble-api.open-meteo.com"
+        components.path = "/v1/ensemble"
+        components.queryItems = [
+            URLQueryItem(name: "latitude", value: String(format: "%.4f", point.latitude)),
+            URLQueryItem(name: "longitude", value: String(format: "%.4f", point.longitude)),
+            URLQueryItem(name: "hourly", value: "precipitation"),
+            URLQueryItem(name: "models", value: "icon_seamless"),
+            URLQueryItem(name: "timeformat", value: "unixtime"),
+            URLQueryItem(name: "forecast_days", value: String(forecastDays))
+        ]
+        return components.url
+    }
 }

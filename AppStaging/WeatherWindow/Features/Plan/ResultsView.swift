@@ -1,13 +1,20 @@
 import SolverKit
+import SwiftData
 import SwiftUI
 
 // The best trade-offs between time and rain, or why no plan fits.
 struct ResultsView: View {
     let result: PlanResult
+    @Query private var savedPlans: [DayPlan]
     @State private var selectedID: String?
 
+    // Learned from the saved plans; nil until two plans have been saved.
+    private var usual: ScoredSchedule? {
+        result.usualChoice(savedTradeOffs: savedPlans.map(\.tradeOff))
+    }
+
     private var selected: ScoredSchedule? {
-        result.frontier.first { $0.id == selectedID } ?? result.fastest
+        result.frontier.first { $0.id == selectedID } ?? usual ?? result.fastest
     }
 
     var body: some View {
@@ -19,7 +26,7 @@ struct ResultsView: View {
             case .frontier(let schedules):
                 List {
                     Section {
-                        ForecastNotice()
+                        ForecastNotice(usesEnsemble: result.usesEnsemble)
                     }
 
                     if let fastest = result.fastest, let driest = result.driest {
@@ -29,6 +36,10 @@ struct ResultsView: View {
                             } else {
                                 ScheduleCard(title: "Fastest", systemImage: "hare", result: result, schedule: fastest)
                                 ScheduleCard(title: "Driest", systemImage: "umbrella", result: result, schedule: driest)
+                            }
+                            if let usual, usual.id != fastest.id, usual.id != driest.id {
+                                ScheduleCard(title: "Your Usual Choice", systemImage: "person.crop.circle.badge.checkmark",
+                                             result: result, schedule: usual)
                             }
                         }
                     }

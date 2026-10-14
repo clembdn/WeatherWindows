@@ -15,6 +15,17 @@ import WeatherWindowCore
     #expect(abs(pixel.y - 277) <= 1)
 }
 
+@Test func pixelRoundTripsToTheSamePlace() {
+    let georeference = Georeference()
+    let cbd = GeoPoint(latitude: -37.8136, longitude: 144.9631)
+
+    let pixel = georeference.pixel(for: cbd)
+    let back = georeference.point(forPixelX: pixel.x, y: pixel.y)
+
+    #expect(abs(back.latitude - cbd.latitude) < 1e-9)
+    #expect(abs(back.longitude - cbd.longitude) < 1e-9)
+}
+
 @Test func recoversUniformShift() {
     let frames = (0..<4).map { step in
         frame(discAt: (x: 200 + 10 * Double(step), y: 250 + 4 * Double(step)), minutes: 10 * step)

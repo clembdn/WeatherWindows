@@ -10,7 +10,7 @@ struct WeatherWindowApp: App {
     init() {
         do {
             container = try ModelContainer(
-                for: SavedErrand.self, DayPlan.self, PlannedStop.self, CachedWalkingTime.self,
+                for: SavedErrand.self, DayPlan.self, PlannedStop.self, CachedWalkingTime.self, VerificationScore.self,
                 configurations: ModelConfiguration(isStoredInMemoryOnly: LaunchOption.usesSampleData)
             )
         } catch {

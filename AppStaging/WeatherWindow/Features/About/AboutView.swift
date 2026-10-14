@@ -4,6 +4,7 @@ import SwiftUI
 struct AboutView: View {
     @AppStorage("paceFactor") private var paceFactor = 1.0
     @AppStorage("replayMode") private var replayMode = false
+    @AppStorage("usesEnsemble") private var usesEnsemble = false
 
     private var version: String {
         let info = Bundle.main.infoDictionary
@@ -48,9 +49,23 @@ struct AboutView: View {
                 }
 
                 Section {
+                    Toggle("Use the 40-run ensemble forecast", isOn: $usesEnsemble)
+                } footer: {
+                    Text("Scores plans against five runs of the Open-Meteo ensemble, from the driest to the wettest, instead of shifting one forecast 15 and 30 minutes. Not used in replay mode.")
+                }
+
+                Section {
                     Toggle("Replay a recorded rainy morning", isOn: $replayMode)
                 } footer: {
                     Text("Uses the radar and forecast recorded on 3 October 2026 with a frozen clock, and straight-line walking times. Works offline.")
+                }
+
+                Section {
+                    NavigationLink("How Accurate Is the Nowcast?") {
+                        VerificationView()
+                    }
+                } footer: {
+                    Text("Replays recorded radar images and compares the nowcast with what the radar saw next.")
                 }
 
                 Section("Data") {

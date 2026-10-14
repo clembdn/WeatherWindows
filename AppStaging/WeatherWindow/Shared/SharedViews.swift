@@ -13,12 +13,21 @@ struct RainBadge: View {
     }
 }
 
-// Reminds the user how coarse the hourly forecast is.
+// Reminds the user how coarse the hourly forecast is, and how the scores allow for its errors.
 struct ForecastNotice: View {
+    let usesEnsemble: Bool
+
+    private var text: String {
+        if usesEnsemble {
+            return "Rain comes from the 40 runs of the ensemble forecast at the centre of your errands. "
+                + "Scores keep the worst of five runs, from the driest to the wettest."
+        }
+        return "Rain comes from the hourly forecast at the centre of your errands. "
+            + "Scores assume it may arrive up to 30 minutes early or late."
+    }
+
     var body: some View {
-        Label("Rain comes from the hourly forecast at the centre of your errands. "
-                + "Scores assume it may arrive up to 30 minutes early or late.",
-              systemImage: "info.circle")
+        Label(text, systemImage: "info.circle")
             .font(.footnote)
             .foregroundStyle(.secondary)
     }

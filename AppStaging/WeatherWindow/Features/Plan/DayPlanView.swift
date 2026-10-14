@@ -11,6 +11,7 @@ struct DayPlanView: View {
     @Query(sort: \DayPlan.departure, order: .reverse) private var savedPlans: [DayPlan]
     @AppStorage("paceFactor") private var paceFactor = 1.0
     @AppStorage("replayMode") private var replayMode = false
+    @AppStorage("usesEnsemble") private var usesEnsemble = false
     @State private var model = DayPlanViewModel()
     @State private var location = LocationService()
     @State private var showsResults = false
@@ -191,6 +192,7 @@ struct DayPlanView: View {
     }
 
     private func calculate() {
+        model.usesEnsemble = usesEnsemble && !replayMode
         Task {
             await model.calculate(errands: selectedErrands, data: data)
             if model.result != nil {

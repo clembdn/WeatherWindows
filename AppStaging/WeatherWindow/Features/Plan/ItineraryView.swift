@@ -67,7 +67,7 @@ struct ItineraryView: View {
             }
 
             Section {
-                ForecastNotice()
+                ForecastNotice(usesEnsemble: result.usesEnsemble)
             }
 
             Section {
@@ -82,6 +82,9 @@ struct ItineraryView: View {
         }
         .navigationTitle("Itinerary")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ShareLink(item: result.shareText(for: schedule))
+        }
         .onAppear {
             isSaved = result.isSaved(schedule, in: context)
         }

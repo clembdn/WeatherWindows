@@ -18,6 +18,12 @@ struct ErrandFormView: View {
     var body: some View {
         NavigationStack {
             Form {
+                if errand == nil {
+                    if #available(iOS 26, *) {
+                        DescribeErrandSection(model: model)
+                    }
+                }
+
                 Section {
                     TextField("Name", text: $model.name)
                         .textInputAutocapitalization(.words)
@@ -88,6 +94,55 @@ struct ErrandFormView: View {
             model.showDuplicateName()
         case .failed(let error):
             saveErrorMessage = error.localizedDescription
+        }
+    }
+}
+
+// "Post office, 10 min, open 9 to 5" → the form filled in, then the place searched in Apple Maps.
+@available(iOS 26, *)
+private struct DescribeErrandSection: View {
+    let model: ErrandFormModel
+    @State private var sentence = ""
+    @State private var isFilling = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        if ErrandAssistant.isAvailable {
+            Section {
+                TextField("Post office, 10 min, open 9 to 5", text: $sentence, axis: .vertical)
+                Button("Fill In the Form", systemImage: "sparkles", action: fillIn)
+                    .disabled(sentence.trimmingCharacters(in: .whitespaces).isEmpty || isFilling)
+                if isFilling {
+                    ProgressView("Reading your sentence…")
+                }
+                ValidationMessage(text: errorMessage)
+            } header: {
+                Text("Describe It")
+            } footer: {
+                Text("Apple Intelligence fills in the form on your iPhone. Check every field before saving.")
+            }
+        }
+    }
+
+    private func fillIn() {
+        isFilling = true
+        errorMessage = nil
+        Task {
+            defer { isFilling = false }
+            do {
+                let draft = try await ErrandAssistant.draft(from: sentence)
+                model.fill(name: draft.name, durationMinutes: draft.durationMinutes,
+                           openingHour: draft.openingHour, closingHour: draft.closingHour)
+                let search = PlaceSearchService()
+                search.query = draft.placeQuery
+                do {
+                    model.place = try await search.placeForQuery()
+                } catch {
+                    errorMessage = "“\(draft.placeQuery)” wasn't found. Choose the place below."
+                }
+            } catch {
+                errorMessage = "That sentence couldn't be read. Fill in the form instead."
+            }
         }
     }
 }
