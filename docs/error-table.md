@@ -17,9 +17,19 @@ Tableau du cahier (§13), avec pour chaque ligne **ce que fait l'app** et **comm
 | Écran quitté pendant un calcul | Aucun message d'erreur, l'écran revient à son état de départ | `cancellationIsNotReportedAsAnError` |
 | Localisation refusée | Départ basculé sur « Choose Place » + message | `switchesToAChosenStartWhenLocationIsDenied` ; à provoquer au Mac (Réglages) |
 | Notifications refusées | Message + bouton « Turn On Notifications in Settings » | `NotificationService.isDenied` ; à provoquer au Mac |
-| Bibliothèque vide | `ContentUnavailableView` avec bouton « Add Errand » | À voir au Mac (premier lancement) |
-| Nom de course en double | « You already have an errand called “Coles”. » | `rejectsDuplicateNameIgnoringCaseAccentsAndSpaces` |
+| Bibliothèque vide | `ContentUnavailableView` avec bouton « Add Errand » | Vu au Mac 2 (premier lancement après suppression de l'app) |
+| Nom de course en double | « You already have an errand called “Coles”. » | `rejectsDuplicateNameIgnoringCaseAccentsAndSpaces` ; vu au Mac 2 |
+| Course renommée avec le nom d'une autre | Même message ; garder son propre nom reste permis | `editingRejectsAnotherErrandsName` |
+| Course modifiée après avoir été planifiée | Le plan enregistré garde l'ancienne copie | `editingErrandKeepsThePlannedCopy` ; vu au Mac 2 |
 | Plus de 4 courses cochées | « You can plan up to 4 errands at once. » | `refusesAFifthErrand` |
+| Course cochée puis supprimée dans Errands | Sa place est libérée, on peut en cocher une autre | `forgetsADeletedErrand` ; vu au Mac 2 |
+| « Save This Plan » appuyé deux fois (ou itinéraire rouvert) | Un seul plan enregistré, « Plan saved » affiché | `savesTheSamePlanOnlyOnce` ; vu au Mac 2 |
+| Prévision d'ensemble indisponible (réseau, rejeu) | Repli silencieux sur la prévision décalée, la note des résultats le dit | `scoresWithTheEnsembleWhenItIsAvailable` |
+| Ensemble Open-Meteo sans aucun run de pluie | Réponse refusée comme illisible | `rejectsAnEnsembleWithoutRain` |
+| Score du radar en direct hors ligne (écran Nowcast Accuracy) | Message + Retry ; les scores déjà enregistrés restent affichés | `LoadState` de `VerificationViewModel` ; à provoquer au Mac |
+| Pluie qui arrive sur le prochain trajet | Une seule alerte, pas une toutes les 10 min | `alertsOnceWhenRainHeadsForTheNextWalk` |
+| Apple Intelligence absent (iOS 18, Mac sans IA) | La section « Describe It » n'apparaît pas, le formulaire reste normal | `ErrandAssistant.isAvailable` ; à vérifier au Mac 3 |
+| Phrase illisible, ou lieu de la phrase introuvable | Message sous la section, l'utilisateur remplit à la main | `fillsTheFormFromADescription` (valeurs ramenées dans les bornes) |
 | Fermeture avant ouverture, durée trop longue | Message sous le champ, Save désactivé | `rejectsClosingBeforeOpening`, `rejectsDurationLongerThanOpeningHours` |
 | Base de données inaccessible | Seul `fatalError` de l'app, comme le modèle Apple : sans stockage, rien n'est utilisable | Lecture du code (`WeatherWindowApp.init`) |
 

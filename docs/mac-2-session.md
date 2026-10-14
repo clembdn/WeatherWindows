@@ -6,9 +6,9 @@ Depuis le Mac 1, le code a été simplifié, mais toutes les fonctions sont rest
 
 ## Avant de partir (Linux)
 
-- [ ] Pousser sur GitHub, puis `./ww status` : CI *Apple* verte (tests unitaires, captures, audit d'accessibilité). `./ww screenshots` pour voir les captures.
-- [ ] Pousser sur GitLab.
-- [ ] Relire « Ce qui a changé » ci-dessous : c'est ce qu'on peut te demander d'expliquer.
+- [x] Pousser sur GitHub, puis `./ww status` : CI *Apple* verte (tests unitaires, captures, audit d'accessibilité). `./ww screenshots` pour voir les captures.
+- [x] Pousser sur GitLab.
+- [x] Relire « Ce qui a changé » ci-dessous : c'est ce qu'on peut te demander d'expliquer.
 
 ## Ce qui a changé depuis le Mac 1
 
@@ -89,3 +89,10 @@ Terminé quand : la CI GitHub est verte et le journal du `README.md` a ses 3 lig
 - Le P9 est-il jugé sur le MVP du P6 + le Route Nowcast du HD1, et non sur toute la liste du P6 ?
 - Les Mac du lab sont-ils accessibles pendant la SWOT vac (26–30 oct.) et la période d'examens ?
 - Le rendu GitLab doit-il contenir les tests et le package local (recommandé : oui) ?
+
+## Bilan de la séance (14 oct.)
+
+- Étapes 1 à 8 faites, sans problème : build et tests verts, 4 vraies courses, modification d'une course, doublon refusé, cache *From cache 20 · Requested 0*, boucle complète avec plan enregistré une seule fois, localisation refusée, sélection sur le graphe, rappel.
+- Tag `mvp` posé sur GitLab (commit « Mac 2: MVP loop with real data »).
+- Branche `bonus` fusionnée dans `main` et vérifiée au Mac : précision du nowcast, ensemble, choix habituel, partage, alerte pluie, carte radar.
+- Reste à voir : la saisie d'une course en une phrase (Foundation Models), la bannière de l'alerte pluie, le bouton Réglages après un refus des notifications, le radar en direct.

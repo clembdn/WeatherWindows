@@ -10,7 +10,7 @@ FIT3178 Custom App (P9) — Clement Boudon, Student ID 37465848, Monash Universi
 | --- | --- |
 | `WeatherWindowKit/` | Swift package, pure Swift + Foundation, built and tested on Linux and Apple platforms |
 | `WeatherWindowKit/Sources/WeatherWindowCore` | Shared types: `GeoPoint`, `RainField`, `RadarTile`, `RouteGeometry` |
-| `WeatherWindowKit/Sources/ForecastKit` | Open-Meteo and RainViewer decoding, hourly rain field |
+| `WeatherWindowKit/Sources/ForecastKit` | Open-Meteo (hourly and ensemble) and RainViewer decoding, hourly rain field |
 | `WeatherWindowKit/Sources/SolverKit` | Day simulation, robust score, Pareto frontier |
 | `WeatherWindowKit/Sources/NowcastKit` | Radar grids, georeference, motion estimation, advection, verification |
 | `repo-mac-gitlab/` (not tracked here) | The real Xcode project, in the Monash GitLab repository `fit3178-cbou0034/weatherwindow`, created in Mac session 1 |
@@ -79,10 +79,10 @@ Tile: zoom 7, x 115, y 78, 512 px, Universal Blue (scheme 2), no smoothing, no s
 | `List`, `Form`, navigation (Lab 3) | Errand library, errand form, day planning |
 | SwiftData `@Model`, `@Query`, `ModelContext` (Lab 5) | `SavedErrand` (with a `UUID` id like `StoredBook`), `DayPlan`, `PlannedStop`, `CachedWalkingTime` |
 | `URLSession` + `Decodable` + async/await, `@Observable` view model (Lab 5) | `OpenMeteoService`, `LiveRainViewerSource`, `DayPlanViewModel`, `NextWalkViewModel`, `ErrandFormModel` |
-| Store with a result enum (Lab 3 `HeroStore`) | `ErrandStore.add` returns `AddErrandResult` (added, duplicate name, failed) |
+| Store with a result enum (Lab 3 `HeroStore`) | `ErrandStore.add` and `update` return `SaveErrandResult` (saved, duplicate name, failed) |
 | `TabView`, typed `LocalizedError` (Week 6 Campus Questboard) | Main tabs, `ServiceError` |
 | MapKit, `CLLocationManager` provider (Lab 7) | Place search, walking times, route map; `LocationService` is the Lab 7 `LocationProvider` made `async` |
-| Swift Charts (Lab 9) | Time-versus-rain trade-off chart |
+| Swift Charts (Lab 9) | Time-versus-rain trade-off chart, nowcast accuracy chart |
 
 ## Before each Wednesday Mac session
 
@@ -97,6 +97,7 @@ Tile: zoom 7, x 115, y 78, 512 px, Universal Blue (scheme 2), no smoothing, no s
 | Tag | Date | Done | Broken | Next |
 | --- | --- | --- | --- | --- |
 | `mac-1` | 7 Oct 2026 | Xcode project on GitLab (iOS 18, Swift 6, MainActor isolation, local package), location permission, errand library; typed address searched on Return, start place remembered | `import ForecastKit` missing in a test (member import visibility), one main actor warning in the collision view, both fixed | Mac 2: real services, full loop, tag `mvp` (checklist in `docs/mac-2-session.md`) |
+| `mvp` | 14 Oct 2026 | Full loop in the simulator with real data: 4 errands searched in Apple Maps, edit and duplicate check, walking times cached (20 from cache, 0 requested), plan calculated, saved once and kept after relaunch, location refused falls back to a chosen start, chart selection and departure reminder. Then the bonus branch merged and checked: nowcast accuracy, ensemble, usual choice, sharing, rain alert, radar map | Errand from a sentence (Foundation Models) still to fix on the lab Mac | Mac 3: live radar, notification banners, error situations, VoiceOver and Dynamic Type |
 
 ## Credits
 
