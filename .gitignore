@@ -20,6 +20,5 @@ __pycache__/
 recordings/
 .build-docker/
 
-# CI screenshots and the CI-only preview project
+# CI screenshots
 screenshots/
-ci/preview/*.xcodeproj

@@ -6,10 +6,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "WeatherWindowKit/**"
       - "WeatherWindow/**"
-      - "AppStaging/**"
-      - "ci/**"
       - ".github/workflows/apple.yml"
   workflow_dispatch:
 
@@ -23,7 +20,7 @@ env:
 
 jobs:
   build:
-    name: Package and app on Xcode
+    name: App on Xcode
     runs-on: macos-26
     timeout-minutes: 30
     steps:
@@ -35,36 +32,7 @@ jobs:
           xcodebuild -version
           swift --version
 
-      - name: Test package on macOS
-        working-directory: WeatherWindowKit
-        run: swift test -Xswiftc -warnings-as-errors
-
-      - name: Build package for iOS Simulator
-        working-directory: WeatherWindowKit
-        run: |
-          if xcodebuild -list | grep -q "WeatherWindowKit-Package"; then scheme=WeatherWindowKit-Package; else scheme=WeatherWindowKit; fi
-          xcodebuild build -scheme "$scheme" -destination "generic/platform=iOS Simulator" CODE_SIGNING_ALLOWED=NO
-
-      - name: Build and test the staged app sources
-        if: hashFiles('AppStaging/Package.swift') != ''
-        working-directory: AppStaging
-        run: |
-          scheme=$(xcodebuild -list | sed -n '/Schemes:/{n;p;}' | xargs)
-          echo "Using scheme $scheme"
-          xcodebuild test -scheme "$scheme" -destination "$SIMULATOR" CODE_SIGNING_ALLOWED=NO
-
-      - name: Check for the Xcode project
-        id: project
-        run: |
-          if [ -f WeatherWindow/WeatherWindow.xcodeproj/project.pbxproj ]; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::WeatherWindow.xcodeproj does not exist yet; app build skipped."
-          fi
-
       - name: Build and test the app
-        if: steps.project.outputs.exists == 'true'
         run: |
           xcodebuild test \
             -project WeatherWindow/WeatherWindow.xcodeproj \
@@ -72,17 +40,6 @@ jobs:
             -destination "$SIMULATOR" \
             -resultBundlePath "$RUNNER_TEMP/app.xcresult" \
             CODE_SIGNING_ALLOWED=NO
-
-      - name: Preview the staged app and take screenshots
-        if: steps.project.outputs.exists == 'false' && hashFiles('AppStaging/Package.swift') != ''
-        run: |
-          brew install xcodegen
-          xcodegen generate --spec ci/preview/project.yml
-          xcodebuild test \
-            -project ci/preview/WeatherWindowPreview.xcodeproj \
-            -scheme WeatherWindow \
-            -destination "$SIMULATOR" \
-            -resultBundlePath "$RUNNER_TEMP/app.xcresult"
 
       - name: Export screenshots
         if: always()
