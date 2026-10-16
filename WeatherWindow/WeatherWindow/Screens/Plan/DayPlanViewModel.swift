@@ -147,6 +147,31 @@ final class DayPlanViewModel {
         }
     }
 
+    func reuse(_ plan: DayPlan) {
+        var ids: Set<UUID> = []
+        for stop in plan.orderedStops {
+            if let errand = stop.errand, ids.count < Self.maxErrands {
+                ids.insert(errand.id)
+            }
+        }
+        selectedIDs = ids
+        selectionMessage = nil
+
+        if plan.startName == "Current Location" {
+            startsAtCurrentLocation = true
+        } else {
+            startsAtCurrentLocation = false
+            startPlace = plan.start
+        }
+
+        if plan.endName == nil {
+            endsAtStart = true
+        } else {
+            endsAtStart = false
+            endPlace = plan.end
+        }
+    }
+
     func keepSelected(onlyAmong ids: [UUID]) {
         selectedIDs = selectedIDs.filter { ids.contains($0) }
         if selectedIDs.count < Self.maxErrands {

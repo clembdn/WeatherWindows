@@ -175,6 +175,7 @@ flowchart LR
 | `RouteMapView` | Carte : sec en bleu plein, pluvieux en orange pointillé |
 | `ItineraryView` | Étapes, Save, Remind me, Share, radar |
 | `SavedPlanView` | Un jour enregistré, relu depuis SwiftData |
+| `ItinerariesView` | Itinéraires déjà faits (plans enregistrés sans doublon) ; en toucher un appelle `DayPlanViewModel.reuse` qui recoche les courses, le départ et l'arrivée |
 | **Screens/NextWalk/** | |
 | `NextWalkView` / `NextWalkViewModel` | Conseil radar, rechargé toutes les 10 min, alerte |
 | `DepartureAdviceCard` | « Leave now » ou « Wait 20 min » |

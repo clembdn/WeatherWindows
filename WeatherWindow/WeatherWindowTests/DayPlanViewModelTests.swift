@@ -141,6 +141,23 @@ struct DayPlanViewModelTests {
         #expect(result.isSaved(schedule, in: context))
     }
 
+    @Test func reusesASavedItinerary() async throws {
+        let planner = morningModel()
+        await planner.calculate(errands: insertErrands(["Gym", "Coles", "Library"]), data: FakeData())
+        let result = try #require(planner.result)
+        try result.save(try #require(result.fastest), in: context)
+        let plan = try #require(try context.fetch(FetchDescriptor<DayPlan>()).first)
+
+        let model = morningModel()
+        model.startsAtCurrentLocation = false
+        model.endsAtStart = false
+        model.reuse(plan)
+
+        #expect(model.selectedIDs == Set(result.errands.map(\.id)))
+        #expect(model.startsAtCurrentLocation)
+        #expect(model.endsAtStart)
+    }
+
     @Test func learnsTheUsualTradeOff() async throws {
         let result = try await rainyMorningResult()
         let fastest = try #require(result.fastest)

@@ -77,6 +77,14 @@ struct DayPlanView: View {
                 Text("Add errands in the Errands tab first.")
                     .foregroundStyle(.secondary)
             }
+            if !savedPlans.isEmpty {
+                NavigationLink {
+                    ItinerariesView { plan in model.reuse(plan) }
+                } label: {
+                    Label("Use a Saved Itinerary", systemImage: "arrow.clockwise")
+                }
+                .accessibilityIdentifier("use-saved-itinerary")
+            }
             ForEach(errands) { errand in
                 let isSelected = model.selectedIDs.contains(errand.id)
                 Button {
