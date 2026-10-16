@@ -19,16 +19,38 @@ struct RainBadge: View {
     }
 }
 
+struct ConfidenceBadge: View {
+    let level: Int
+
+    private var icon: String {
+        switch level {
+        case 3:
+            "gauge.with.dots.needle.67percent"
+        case 2:
+            "gauge.with.dots.needle.50percent"
+        default:
+            "gauge.with.dots.needle.33percent"
+        }
+    }
+
+    var body: some View {
+        Label(PlanText.confidence(level), systemImage: icon)
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+    }
+}
+
 struct ForecastNotice: View {
     let usesEnsemble: Bool
 
     private var text: String {
+        let confidence = " Confidence is 3 when the scenarios agree within 2 min of rain, and 1 when they differ by 5 min or more."
         if usesEnsemble {
             return "Rain comes from the 40 runs of the ensemble forecast at the centre of your errands. "
-                + "Scores keep the worst of five runs, from the driest to the wettest."
+                + "Scores keep the worst of five runs, from the driest to the wettest." + confidence
         }
         return "Rain comes from the hourly forecast at the centre of your errands. "
-            + "Scores assume it may arrive up to 30 minutes early or late."
+            + "Scores assume it may arrive up to 30 minutes early or late." + confidence
     }
 
     var body: some View {

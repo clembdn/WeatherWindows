@@ -71,6 +71,10 @@ nonisolated enum ServiceError: LocalizedError, Equatable {
         }
     }
 
+    var isLocationError: Bool {
+        self == .locationDenied || self == .locationUnavailable
+    }
+
     var errorDescription: String? {
         switch self {
         case .offline:

@@ -175,6 +175,19 @@ import Testing
     #expect(advice.noPlanReason == .closesTooEarly(stopName: "Post", closingMinute: 14 * 60 + 5))
 }
 
+@Test func confidenceDropsWhenScenariosDisagree() {
+    let agree = Schedule(departure: at(14, 0), returnTime: at(14, 0), visits: [], walks: [],
+                         exposureByScenario: [1, 1.5], duration: 0)
+    let littleDifferent = Schedule(departure: at(14, 0), returnTime: at(14, 0), visits: [], walks: [],
+                                   exposureByScenario: [0, 3], duration: 0)
+    let veryDifferent = Schedule(departure: at(14, 0), returnTime: at(14, 0), visits: [], walks: [],
+                                 exposureByScenario: [0, 8], duration: 0)
+
+    #expect(agree.confidence == 3)
+    #expect(littleDifferent.confidence == 2)
+    #expect(veryDifferent.confidence == 1)
+}
+
 private let homePlace = GeoPoint(latitude: -37.8136, longitude: 144.9631)
 private let postPlace = GeoPoint(latitude: -37.8140, longitude: 144.9633)
 private let colesPlace = GeoPoint(latitude: -37.8102, longitude: 144.9628)

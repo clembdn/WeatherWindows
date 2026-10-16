@@ -19,6 +19,17 @@ enum PlanText {
         return "Up to ~\(max(1, Int(exposure.rounded()))) min of rain"
     }
 
+    static func confidence(_ level: Int) -> String {
+        switch level {
+        case 3:
+            "High confidence · 3/3"
+        case 2:
+            "Medium confidence · 2/3"
+        default:
+            "Low confidence · 1/3"
+        }
+    }
+
     static func duration(_ seconds: TimeInterval) -> String {
         let minutes = Int((seconds / 60).rounded())
         if minutes < 60 {

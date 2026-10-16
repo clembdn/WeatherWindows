@@ -20,6 +20,11 @@ struct ErrandFormView: View {
         _model = State(initialValue: ErrandFormModel(errand: errand))
     }
 
+    private var plans: [DayPlan] {
+        let found = errand?.plannedStops.compactMap(\.plan) ?? []
+        return found.sorted { $0.departure > $1.departure }
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -61,6 +66,19 @@ struct ErrandFormView: View {
                     Text("Opening Hours")
                 } footer: {
                     ValidationMessage(text: model.hoursMessage)
+                }
+
+                if !plans.isEmpty {
+                    Section("Used in Plans") {
+                        ForEach(plans) { plan in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(plan.departure.formatted(date: .abbreviated, time: .shortened))
+                                Text(plan.orderedStops.map(\.name).joined(separator: " → "))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
                 }
 
                 if let saveErrorMessage {

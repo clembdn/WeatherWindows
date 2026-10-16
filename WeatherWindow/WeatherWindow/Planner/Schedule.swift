@@ -34,6 +34,17 @@ nonisolated struct Schedule: Hashable, Identifiable {
 
     var robustExposure: Double { exposureByScenario.max() ?? 0 }
 
+    var confidence: Int {
+        let spread = (exposureByScenario.max() ?? 0) - (exposureByScenario.min() ?? 0)
+        if spread < 2 {
+            return 3
+        }
+        if spread < 5 {
+            return 2
+        }
+        return 1
+    }
+
     var order: [Stop] { visits.map(\.stop) }
 
     var id: String {

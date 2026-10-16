@@ -25,6 +25,7 @@ struct ItineraryView: View {
                 LabeledContent("Back", value: Melbourne.time(schedule.returnTime))
                 LabeledContent("Time out", value: PlanText.duration(schedule.returnTime.timeIntervalSince(schedule.departure)))
                 RainBadge(exposure: schedule.robustExposure)
+                ConfidenceBadge(level: schedule.confidence)
                 NavigationLink {
                     NextWalkView(input: NextWalkInput(current: result.start, remaining: schedule.order, end: result.end),
                                  data: result.data)

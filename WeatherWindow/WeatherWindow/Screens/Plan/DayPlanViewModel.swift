@@ -240,7 +240,7 @@ final class DayPlanViewModel {
                 state = .idle
                 return
             }
-            if serviceError == .locationDenied || serviceError == .locationUnavailable {
+            if serviceError.isLocationError {
                 startsAtCurrentLocation = false
             }
             state = .failed(serviceError)

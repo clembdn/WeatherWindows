@@ -106,6 +106,7 @@ private struct ScheduleCard: View {
                 Text("Back at \(Melbourne.time(schedule.returnTime)) · \(PlanText.duration(schedule.returnTime.timeIntervalSince(schedule.departure))) out")
                     .foregroundStyle(.secondary)
                 RainBadge(exposure: schedule.robustExposure)
+                ConfidenceBadge(level: schedule.confidence)
             }
             .padding(.vertical, 4)
         }

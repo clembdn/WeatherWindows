@@ -95,6 +95,7 @@ Chaque étape s'affiche dans `progress` (« Getting walking times… »).
 - Open-Meteo donne à l'heure T la pluie de l'heure **avant** T (`HourlyForecast`).
 - **Ensemble** (`Ensemble.scenarios`) : 40 runs, classés du plus sec au plus mouillé. On en garde 5 : centiles **50**, 10, 30, 70 et 90.
 - Moins d'**une demi-minute** de pluie = « Dry » (`PlanText.isDry`).
+- **Confiance 1, 2, 3** (`Schedule.confidence`) : l'écart entre le scénario le plus sec et le plus mouillé du plan. Moins de 2 min de pluie d'écart → **3**, moins de 5 min → **2**, sinon **1**. Affichée par `ConfidenceBadge`.
 
 ### Le nowcast radar (`Radar/`)
 
@@ -149,6 +150,7 @@ flowchart LR
 ### Les erreurs (`Helpers/ServiceError.swift`)
 - `URLError`, `MKError`, `DecodingError` et les statuts HTTP sont tous ramenés à **un seul enum** `ServiceError`, avec un message lisible.
 - Une **annulation** (l'utilisateur quitte l'écran) n'affiche aucun message.
+- Une **erreur de localisation** (`isLocationError`) s'affiche juste sous le choix *Start* dans `DayPlanView`, les autres sous la fenêtre de départ.
 - Le **seul `fatalError`** de l'app : la base de données illisible au lancement.
 
 ### Le mode replay (pour la démo)
@@ -166,7 +168,7 @@ flowchart LR
 | `WeatherWindowApp` | Base SwiftData, injecte `ErrandStore` et `NotificationService` |
 | `RootView` | 3 onglets + bandeau replay |
 | **Screens/Plan/** | |
-| `DayPlanView` | Choix des courses, départ, arrivée, fenêtre, bouton Calculate |
+| `DayPlanView` | Choix des courses (« 2 of 3 » : max 4, ou moins s'il y a moins de courses), départ, arrivée, fenêtre, bouton Calculate |
 | `DayPlanViewModel` | `calculate` ; `PlanResult` : enregistrer, partager, choix habituel |
 | `ResultsView` | Plans Fastest / Driest / Usual, graphe, carte |
 | `TradeOffChart` | Swift Charts temps contre pluie, toucher pour choisir |
@@ -180,13 +182,13 @@ flowchart LR
 | `RainColor` | dBZ → couleur et mots pour VoiceOver |
 | **Screens/Errands/** | |
 | `ErrandListView` | Liste, recherche, toucher pour modifier, glisser pour supprimer |
-| `ErrandFormView` / `ErrandFormModel` | Formulaire, validation, « Describe It » |
+| `ErrandFormView` / `ErrandFormModel` | Formulaire, validation, « Describe It », section « Used in Plans » (via `plannedStops` → `plan`) |
 | `PlaceSearchView` | Suggestions Apple Maps en direct |
 | **Screens/About/** | |
 | `AboutView` | Identité, crédits, méthodes, réglages |
 | `VerificationView` / `VerificationViewModel` | Précision du nowcast, graphe, scores enregistrés |
 | `DebugView` | Les 20 temps de marche et les 48 h de prévision |
-| **Screens/Common/** `SharedViews` | `RainBadge`, `ErrorRow`, `ReplayBanner`… |
+| **Screens/Common/** `SharedViews` | `RainBadge`, `ConfidenceBadge`, `ErrorRow`, `ReplayBanner`… |
 | **Database/** | Modèles SwiftData, `ErrandStore`, `SampleData` (4 courses de démo) |
 | **Services/** | |
 | `PlanDataSource` | Protocole + `LiveData` + `ReplayData` |

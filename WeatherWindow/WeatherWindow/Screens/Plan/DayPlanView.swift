@@ -40,7 +40,7 @@ struct DayPlanView: View {
                 startSection
                 endSection
                 windowSection
-                if case .failed(let error) = model.state {
+                if case .failed(let error) = model.state, !error.isLocationError {
                     Section {
                         ErrorRow(error: error) { calculate() }
                     }
@@ -100,7 +100,7 @@ struct DayPlanView: View {
                 .accessibilityIdentifier("errand-\(errand.name)")
             }
         } header: {
-            Text("Errands · \(selectedErrands.count) of \(DayPlanViewModel.maxErrands)")
+            Text("Errands · \(selectedErrands.count) of \(min(errands.count, DayPlanViewModel.maxErrands))")
         } footer: {
             ValidationMessage(text: model.selectionMessage)
         }
@@ -120,6 +120,10 @@ struct DayPlanView: View {
                 } label: {
                     PlaceLabel(place: model.startPlace, placeholder: "Choose a start place")
                 }
+            }
+
+            if case .failed(let error) = model.state, error.isLocationError {
+                ErrorRow(error: error) { calculate() }
             }
         }
     }
