@@ -7,14 +7,14 @@ on:
       test:
         description: Screenshot test to run
         type: choice
-        default: all
+        default: testLandscapePlanFlow
         options:
+          - testLandscapePlanFlow
           - all
           - testLightAppearance
           - testDarkAppearance
           - testLargestDynamicType
           - testLandscape
-          - testLandscapePlanFlow
           - testAppearanceSetting
 
 env:
@@ -43,6 +43,7 @@ jobs:
             -scheme WeatherWindow \
             -destination "$SIMULATOR" \
             -only-testing:"$target" \
+            -parallel-testing-enabled NO \
             -resultBundlePath "$RUNNER_TEMP/app.xcresult" \
             CODE_SIGNING_ALLOWED=NO
 

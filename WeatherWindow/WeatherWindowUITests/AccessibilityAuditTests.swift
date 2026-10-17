@@ -10,6 +10,9 @@ import XCTest
 nonisolated final class AccessibilityAuditTests: XCTestCase {
     @MainActor
     func testMainScreensPassTheAccessibilityAudit() throws {
+        // The screenshot tests can leave the shared simulator in Dark Mode or landscape.
+        XCUIDevice.shared.appearance = .light
+        XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication()
         app.launchArguments = ["--sample-data", "-replayMode", "YES"]
         app.launch()
