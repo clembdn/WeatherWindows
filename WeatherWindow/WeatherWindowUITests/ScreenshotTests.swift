@@ -32,9 +32,28 @@ nonisolated final class ScreenshotTests: XCTestCase {
     }
 
     @MainActor
+    func testLandscape() {
+        XCUIDevice.shared.appearance = .light
+        let app = XCUIApplication()
+        app.launchArguments = ["--sample-data", "-replayMode", "YES"]
+        app.launch()
+        XCUIDevice.shared.orientation = .landscapeLeft
+
+        capture(app, "landscape-1-plan")
+        tap(app.tabBars.buttons["Errands"])
+        capture(app, "landscape-2-errands")
+        tap(app.tabBars.buttons["About"])
+        capture(app, "landscape-3-about")
+
+        XCUIDevice.shared.orientation = .portrait
+        app.terminate()
+    }
+
+    @MainActor
     private func captureMainScreens(prefix: String, appearance: XCUIDevice.Appearance,
                                     arguments: [String] = [], includesPlanFlow: Bool = false) {
         XCUIDevice.shared.appearance = appearance
+        XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication()
         app.launchArguments = ["--sample-data", "-replayMode", "YES"] + arguments
         app.launch()

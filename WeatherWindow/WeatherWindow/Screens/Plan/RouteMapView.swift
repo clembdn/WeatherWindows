@@ -12,6 +12,7 @@ struct RouteMapView: View {
     let result: PlanResult
     let schedule: Schedule
 
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var lines: [[GeoPoint]] = []
 
     var body: some View {
@@ -34,12 +35,16 @@ struct RouteMapView: View {
                 }
             }
             .mapStyle(.standard(pointsOfInterest: .excludingAll))
-            .frame(height: 260)
+            .frame(height: verticalSizeClass == .compact ? 180 : 260)
             .accessibilityLabel("Map of the route, with \(rainyCount) rainy stretches")
 
-            HStack(spacing: 16) {
-                Label("Dry: solid", systemImage: "line.diagonal")
-                Label("Rain: dashed", systemImage: "cloud.rain")
+            ViewThatFits {
+                HStack(spacing: 16) {
+                    legend
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    legend
+                }
             }
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -52,6 +57,11 @@ struct RouteMapView: View {
             }
             lines = newLines
         }
+    }
+
+    @ViewBuilder private var legend: some View {
+        Label("Dry: solid", systemImage: "line.diagonal")
+        Label("Rain: dashed", systemImage: "cloud.rain")
     }
 
     private func rainSegments() -> [RouteSplitter.Segment] {

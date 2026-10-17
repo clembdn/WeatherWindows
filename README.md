@@ -39,7 +39,7 @@ Tools/sync-from-gitlab.sh
 | Workflow | Runs on | Trigger | Checks |
 | --- | --- | --- | --- |
 | `Kit (Linux)` | `swift:6.3.3-noble` | every push | frozen package used by the tools builds with warnings as errors; tools tests |
-| `Apple` | `macos-26`, Xcode 26.6 | PRs to `main`, pushes to `main`, manual | the real Xcode project in `WeatherWindow/`: unit tests on an iPhone simulator, UI tests with screenshots (light, dark, largest text) and the accessibility audit |
+| `Apple` | `macos-26`, Xcode 26.6 | PRs to `main`, pushes to `main`, manual | the real Xcode project in `WeatherWindow/`: unit tests on an iPhone simulator, UI tests with screenshots (light, dark, largest text, landscape) and the accessibility audit |
 | `Radar backup` | `ubuntu-latest` | hourly | records radar frames as a 90-day artifact |
 
 ## Progress and tools
