@@ -60,6 +60,11 @@ nonisolated final class ScreenshotTests: XCTestCase {
         openItinerary(app)
         rotateToLandscape()
         capture(app, "landscape-4-itinerary")
+        app.swipeUp()
+        Thread.sleep(forTimeInterval: 1)
+        capture(app, "landscape-6-route-map")
+        app.swipeDown()
+        Thread.sleep(forTimeInterval: 1)
 
         tap(app.buttons["check-radar"])
         // The rain map is below the fold in landscape, so wait for the alert toggle above it instead.
