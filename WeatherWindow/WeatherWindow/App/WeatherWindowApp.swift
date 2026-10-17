@@ -13,6 +13,21 @@ struct WeatherWindowApp: App {
     private let container: ModelContainer
     @State private var errandStore: ErrandStore
     @State private var notificationService = NotificationService()
+    @AppStorage("appearance") private var appearance = "system"
+
+    private var colorScheme: ColorScheme? {
+        if let forced = LaunchOption.forcedColorScheme {
+            return forced
+        }
+        switch appearance {
+        case "light":
+            return .light
+        case "dark":
+            return .dark
+        default:
+            return nil
+        }
+    }
 
     init() {
         do {
@@ -34,7 +49,7 @@ struct WeatherWindowApp: App {
             RootView()
                 .environment(errandStore)
                 .environment(notificationService)
-                .preferredColorScheme(LaunchOption.forcedColorScheme)
+                .preferredColorScheme(colorScheme)
         }
         .modelContainer(container)
     }

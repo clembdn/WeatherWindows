@@ -165,7 +165,7 @@ flowchart LR
 | Fichier | Rôle |
 | --- | --- |
 | **App/** | |
-| `WeatherWindowApp` | Base SwiftData, injecte `ErrandStore` et `NotificationService` |
+| `WeatherWindowApp` | Base SwiftData, injecte `ErrandStore` et `NotificationService`, applique le thème (`preferredColorScheme`) |
 | `RootView` | 3 onglets + bandeau replay |
 | **Screens/Plan/** | |
 | `DayPlanView` | Choix des courses (« 2 of 3 » : max 4, ou moins s'il y a moins de courses), départ, arrivée, fenêtre, bouton Calculate |
@@ -186,7 +186,7 @@ flowchart LR
 | `ErrandFormView` / `ErrandFormModel` | Formulaire, validation, « Describe It », section « Used in Plans » (via `plannedStops` → `plan`) |
 | `PlaceSearchView` | Suggestions Apple Maps en direct |
 | **Screens/About/** | |
-| `AboutView` | Identité, crédits, méthodes, réglages |
+| `AboutView` | Identité, crédits, méthodes, réglages (dont le thème Système / Clair / Sombre) |
 | `VerificationView` / `VerificationViewModel` | Précision du nowcast, graphe, scores enregistrés |
 | `DebugView` | Les 20 temps de marche et les 48 h de prévision |
 | **Screens/Common/** `SharedViews` | `RainBadge`, `ConfidenceBadge`, `ErrorRow`, `ReplayBanner`… |
@@ -298,3 +298,7 @@ flowchart LR
 | Une note sur une course | `SavedErrand` + `ErrandFormModel` : `var note = ""` ; un `TextField` dans `ErrandFormView` ; l'afficher dans `ErrandListView` | La valeur par défaut garde les données existantes |
 | 7 runs d'ensemble | `Rain/Ensemble.swift` l. 26 : ajouter des centiles | La médiane reste en premier ; le test attend 5 |
 | Curseur à ±45 min | `Screens/NextWalk/NextWalkView.swift` l. 118 : `in: -45...45` | `Radar/NowcastMaker.swift` l. 51 : `minutes: 1...45` |
+
+## Mode sombre
+
+Toutes les couleurs de l'app sont des couleurs système (`.primary`, `.secondary`, `.secondarySystemBackground`, `.regularMaterial`…), donc elles changent toutes seules entre clair et sombre. Le réglage **Appearance** dans About est enregistré avec `@AppStorage("appearance")` (`"system"`, `"light"` ou `"dark"`). `WeatherWindowApp` lit la même clé et la transforme en `ColorScheme?` : `nil` veut dire « suivre l'iPhone ». L'argument de lancement `--dark` (captures d'écran des tests UI) reste prioritaire.

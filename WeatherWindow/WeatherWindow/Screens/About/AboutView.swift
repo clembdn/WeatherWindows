@@ -11,6 +11,7 @@ struct AboutView: View {
     @AppStorage("paceFactor") private var paceFactor = 1.0
     @AppStorage("replayMode") private var replayMode = false
     @AppStorage("usesEnsemble") private var usesEnsemble = false
+    @AppStorage("appearance") private var appearance = "system"
 
     private var version: String {
         let info = Bundle.main.infoDictionary
@@ -52,6 +53,16 @@ struct AboutView: View {
                     Text("Settings")
                 } footer: {
                     Text("Apple Maps assumes a fixed walking speed. Move right if you usually walk slower.")
+                }
+
+                Section {
+                    Picker("Appearance", selection: $appearance) {
+                        Text("System").tag("system")
+                        Text("Light").tag("light")
+                        Text("Dark").tag("dark")
+                    }
+                } footer: {
+                    Text("System follows the light or dark mode of the iPhone.")
                 }
 
                 Section {
