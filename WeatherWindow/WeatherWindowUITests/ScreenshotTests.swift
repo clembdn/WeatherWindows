@@ -63,10 +63,11 @@ nonisolated final class ScreenshotTests: XCTestCase {
 
         XCUIDevice.shared.orientation = .portrait
         tap(app.buttons["check-radar"])
-        XCUIDevice.shared.orientation = .landscapeLeft
         let appeared = app.descendants(matching: .any)["Rain map"].waitForExistence(timeout: 60)
-        capture(app, "landscape-5-next-walk")
         XCTAssertTrue(appeared, "Radar advice never appeared")
+        XCUIDevice.shared.orientation = .landscapeLeft
+        app.swipeUp()
+        capture(app, "landscape-5-next-walk")
 
         XCUIDevice.shared.orientation = .portrait
         app.terminate()
