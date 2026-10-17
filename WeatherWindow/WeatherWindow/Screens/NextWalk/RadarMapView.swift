@@ -15,6 +15,8 @@ struct RadarMapView: View {
     let route: [GeoPoint]
     let you: GeoPoint
 
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+
     private struct RainBand {
         let corners: [CLLocationCoordinate2D]
         let color: Color
@@ -37,7 +39,7 @@ struct RadarMapView: View {
             }
         }
         .mapStyle(.standard(pointsOfInterest: .excludingAll))
-        .frame(height: 320)
+        .frame(height: verticalSizeClass == .compact ? 200 : 320)
     }
 
     private func rainBands() -> [RainBand] {

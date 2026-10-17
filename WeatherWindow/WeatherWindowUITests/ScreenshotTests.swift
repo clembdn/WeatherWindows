@@ -32,9 +32,101 @@ nonisolated final class ScreenshotTests: XCTestCase {
     }
 
     @MainActor
+    func testLandscape() {
+        XCUIDevice.shared.appearance = .light
+        let app = XCUIApplication()
+        app.launchArguments = ["--sample-data", "-replayMode", "YES"]
+        app.launch()
+        rotateToLandscape()
+
+        capture(app, "landscape-1-plan")
+        tap(app.tabBars.buttons["Errands"])
+        capture(app, "landscape-2-errands")
+        tap(app.tabBars.buttons["About"])
+        capture(app, "landscape-3-about")
+
+        XCUIDevice.shared.orientation = .portrait
+        app.terminate()
+    }
+
+    @MainActor
+    func testLandscapePlanFlow() {
+        XCUIDevice.shared.orientation = .portrait
+        let app = XCUIApplication()
+        app.launchArguments = ["--sample-data", "-replayMode", "YES", "--dark"]
+        app.launch()
+
+        openResults(app)
+        openItinerary(app)
+        rotateToLandscape()
+        capture(app, "landscape-4-itinerary")
+        app.swipeUp()
+        Thread.sleep(forTimeInterval: 1)
+        capture(app, "landscape-6-route-map")
+        app.swipeDown()
+        Thread.sleep(forTimeInterval: 1)
+
+        tap(app.buttons["check-radar"])
+        // The rain map is below the fold in landscape, so wait for the alert toggle above it instead.
+        let loaded = app.switches["Alert Me If Rain Is Coming"].waitForExistence(timeout: 60)
+        XCTAssertTrue(loaded, "Radar advice never appeared")
+        app.swipeUp()
+        Thread.sleep(forTimeInterval: 1)
+        capture(app, "landscape-5-next-walk")
+
+        XCUIDevice.shared.orientation = .portrait
+        app.terminate()
+    }
+
+    @MainActor
+    func testAppearanceSetting() {
+        XCUIDevice.shared.appearance = .light
+        XCUIDevice.shared.orientation = .portrait
+        let app = XCUIApplication()
+        app.launchArguments = ["--sample-data", "-replayMode", "YES", "-appearance", "dark"]
+        app.launch()
+
+        tap(app.tabBars.buttons["About"])
+        capture(app, "appearance-setting-dark")
+        app.terminate()
+    }
+
+    @MainActor
+    private func rotateToLandscape() {
+        XCUIDevice.shared.orientation = .landscapeLeft
+        // Give the rotation animation time to finish before the next screenshot.
+        Thread.sleep(forTimeInterval: 2)
+    }
+
+    @MainActor
+    private func openResults(_ app: XCUIApplication) {
+        tap(app.tabBars.buttons["Plan"])
+        for name in ["Post Office", "Coles", "Library"] {
+            tap(app.buttons["errand-\(name)"])
+        }
+        tap(app.buttons["calculate"])
+        XCTAssertTrue(app.navigationBars["Results"].waitForExistence(timeout: 30), "Results never appeared")
+    }
+
+    @MainActor
+    private func openItinerary(_ app: XCUIApplication) {
+        tap(app.buttons["plan-card"].firstMatch)
+        XCTAssertTrue(app.navigationBars["Itinerary"].waitForExistence(timeout: 10), "Itinerary never appeared")
+    }
+
+    @MainActor
+    private func openNextWalk(_ app: XCUIApplication, captureAs name: String) {
+        tap(app.buttons["check-radar"])
+        let appeared = app.descendants(matching: .any)["Rain map"].waitForExistence(timeout: 60)
+        capture(app, name)
+        XCTAssertTrue(appeared, "Radar advice never appeared")
+    }
+
+    @MainActor
     private func captureMainScreens(prefix: String, appearance: XCUIDevice.Appearance,
                                     arguments: [String] = [], includesPlanFlow: Bool = false) {
         XCUIDevice.shared.appearance = appearance
+        XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication()
         app.launchArguments = ["--sample-data", "-replayMode", "YES"] + arguments
         app.launch()
@@ -55,23 +147,13 @@ nonisolated final class ScreenshotTests: XCTestCase {
         capture(app, "\(prefix)-4-about")
 
         if includesPlanFlow {
-            tap(app.tabBars.buttons["Plan"])
-            for name in ["Post Office", "Coles", "Library"] {
-                tap(app.buttons["errand-\(name)"])
-            }
-            tap(app.buttons["calculate"])
-            XCTAssertTrue(app.navigationBars["Results"].waitForExistence(timeout: 30), "Results never appeared")
+            openResults(app)
             capture(app, "\(prefix)-5-results")
 
-            tap(app.buttons["plan-card"].firstMatch)
-            XCTAssertTrue(app.navigationBars["Itinerary"].waitForExistence(timeout: 10), "Itinerary never appeared")
+            openItinerary(app)
             capture(app, "\(prefix)-6-itinerary")
 
-            tap(app.buttons["check-radar"])
-            let radarMap = app.descendants(matching: .any)["Rain map"]
-            let appeared = radarMap.waitForExistence(timeout: 60)
-            capture(app, "\(prefix)-7-next-walk")
-            XCTAssertTrue(appeared, "Radar advice never appeared")
+            openNextWalk(app, captureAs: "\(prefix)-7-next-walk")
         }
 
         app.terminate()
@@ -85,7 +167,7 @@ nonisolated final class ScreenshotTests: XCTestCase {
 
     @MainActor
     private func capture(_ app: XCUIApplication, _ name: String) {
-        let attachment = XCTAttachment(screenshot: app.screenshot())
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
