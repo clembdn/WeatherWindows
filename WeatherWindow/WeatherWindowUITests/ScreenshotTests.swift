@@ -37,7 +37,7 @@ nonisolated final class ScreenshotTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--sample-data", "-replayMode", "YES"]
         app.launch()
-        XCUIDevice.shared.orientation = .landscapeLeft
+        rotateToLandscape()
 
         capture(app, "landscape-1-plan")
         tap(app.tabBars.buttons["Errands"])
@@ -58,14 +58,14 @@ nonisolated final class ScreenshotTests: XCTestCase {
 
         openResults(app)
         openItinerary(app)
-        XCUIDevice.shared.orientation = .landscapeLeft
+        rotateToLandscape()
         capture(app, "landscape-4-itinerary")
 
         XCUIDevice.shared.orientation = .portrait
         tap(app.buttons["check-radar"])
         let appeared = app.descendants(matching: .any)["Rain map"].waitForExistence(timeout: 60)
         XCTAssertTrue(appeared, "Radar advice never appeared")
-        XCUIDevice.shared.orientation = .landscapeLeft
+        rotateToLandscape()
         app.swipeUp()
         capture(app, "landscape-5-next-walk")
 
@@ -84,6 +84,13 @@ nonisolated final class ScreenshotTests: XCTestCase {
         tap(app.tabBars.buttons["About"])
         capture(app, "appearance-setting-dark")
         app.terminate()
+    }
+
+    @MainActor
+    private func rotateToLandscape() {
+        XCUIDevice.shared.orientation = .landscapeLeft
+        // Give the rotation animation time to finish before the next screenshot.
+        Thread.sleep(forTimeInterval: 2)
     }
 
     @MainActor
@@ -155,7 +162,7 @@ nonisolated final class ScreenshotTests: XCTestCase {
 
     @MainActor
     private func capture(_ app: XCUIApplication, _ name: String) {
-        let attachment = XCTAttachment(screenshot: app.screenshot())
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
