@@ -1,0 +1,71 @@
+name: Screenshots
+
+# Runs only the screenshot UI tests, for when the app has not changed but new captures are needed.
+on:
+  workflow_dispatch:
+    inputs:
+      test:
+        description: Screenshot test to run
+        type: choice
+        default: all
+        options:
+          - all
+          - testLightAppearance
+          - testDarkAppearance
+          - testLargestDynamicType
+          - testLandscape
+          - testLandscapePlanFlow
+          - testAppearanceSetting
+
+env:
+  XCODE_VERSION: "26.6"
+  SIMULATOR: "platform=iOS Simulator,name=iPhone 17,OS=latest"
+
+jobs:
+  screenshots:
+    name: Screenshots on Xcode
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Select Xcode
+        run: sudo xcode-select -s "/Applications/Xcode_${XCODE_VERSION}.app"
+
+      - name: Take screenshots
+        run: |
+          target="WeatherWindowUITests/ScreenshotTests"
+          if [ "${{ inputs.test }}" != "all" ]; then
+            target="$target/${{ inputs.test }}"
+          fi
+          xcodebuild test \
+            -project WeatherWindow/WeatherWindow.xcodeproj \
+            -scheme WeatherWindow \
+            -destination "$SIMULATOR" \
+            -only-testing:"$target" \
+            -resultBundlePath "$RUNNER_TEMP/app.xcresult" \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Export screenshots
+        if: always()
+        run: |
+          [ -d "$RUNNER_TEMP/app.xcresult" ] || exit 0
+          xcrun xcresulttool export attachments --path "$RUNNER_TEMP/app.xcresult" --output-path screenshots
+          cd screenshots
+          jq -r '.[].attachments[] | [.exportedFileName, .suggestedHumanReadableName] | @tsv' manifest.json |
+            while IFS=$'\t' read -r file name; do
+              case "$name" in
+                *.png) mv "$file" "$(echo "$name" | sed -E 's/_[0-9]+_[0-9A-Fa-f-]+\.png$/.png/; s/[^A-Za-z0-9._-]+/-/g')" ;;
+                *) rm -f "$file" ;;
+              esac
+            done
+          rm -f manifest.json
+          ls
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: screenshots
+          path: screenshots/
+          retention-days: 30
+          if-no-files-found: warn
