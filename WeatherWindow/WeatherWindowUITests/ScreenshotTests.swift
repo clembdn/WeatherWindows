@@ -78,8 +78,8 @@ nonisolated final class ScreenshotTests: XCTestCase {
         app.terminate()
     }
 
-    // Swipes did not scroll after rotating, so scroll to each map in portrait first.
-    // The swipeRight and swipeUp captures are fallbacks in case the scroll position resets on rotation.
+    // Swipes do nothing once the simulator is in landscape, but rotating keeps the scroll position.
+    // So each attempt scrolls a little in portrait, then rotates and captures.
     @MainActor
     func testLandscapeMaps() {
         XCUIDevice.shared.orientation = .portrait
@@ -89,32 +89,54 @@ nonisolated final class ScreenshotTests: XCTestCase {
 
         openResults(app)
         openItinerary(app)
+        let routeMap = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label BEGINSWITH 'Map of the route'")).firstMatch
+        record(routeMap, "route-map-portrait")
         app.swipeUp()
-        Thread.sleep(forTimeInterval: 1)
-        rotateToLandscape()
-        capture(app, "landscape-6-route-map-a")
-        app.swipeRight()
-        Thread.sleep(forTimeInterval: 1)
-        capture(app, "landscape-6-route-map-b")
-        app.swipeUp()
-        Thread.sleep(forTimeInterval: 1)
-        capture(app, "landscape-6-route-map-c")
+        for (attempt, points) in ([150, 40, 40] as [CGFloat]).enumerated() {
+            drag(app, by: points)
+            rotateToLandscape()
+            capture(app, "landscape-6-route-map-\(attempt + 1)")
+            record(routeMap, "route-map-landscape-\(attempt + 1)")
+            XCUIDevice.shared.orientation = .portrait
+            Thread.sleep(forTimeInterval: 2)
+        }
 
-        XCUIDevice.shared.orientation = .portrait
-        Thread.sleep(forTimeInterval: 2)
         app.swipeDown()
         app.swipeDown()
         openNextWalk(app, captureAs: "portrait-7-next-walk")
+        let radarMap = app.descendants(matching: .any)["Rain map"]
+        record(radarMap, "radar-map-portrait")
         app.swipeUp()
-        Thread.sleep(forTimeInterval: 1)
-        rotateToLandscape()
-        capture(app, "landscape-7-radar-a")
-        app.swipeRight()
-        Thread.sleep(forTimeInterval: 1)
-        capture(app, "landscape-7-radar-b")
+        for (attempt, points) in ([-120, -40, -40] as [CGFloat]).enumerated() {
+            drag(app, by: points)
+            rotateToLandscape()
+            capture(app, "landscape-7-radar-\(attempt + 1)")
+            record(radarMap, "radar-map-landscape-\(attempt + 1)")
+            XCUIDevice.shared.orientation = .portrait
+            Thread.sleep(forTimeInterval: 2)
+        }
 
-        XCUIDevice.shared.orientation = .portrait
         app.terminate()
+    }
+
+    /// Drags the list by a fixed distance in points (positive moves the content down) and holds, so it does not fling.
+    @MainActor
+    private func drag(_ app: XCUIApplication, by points: CGFloat) {
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        let end = start.withOffset(CGVector(dx: 0, dy: points))
+        start.press(forDuration: 0.2, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.5)
+        Thread.sleep(forTimeInterval: 1)
+    }
+
+    /// Saves an element's frame as text, so the map height in each orientation can be read exactly.
+    @MainActor
+    private func record(_ element: XCUIElement, _ name: String) {
+        let text = element.exists ? "\(name): \(element.frame)" : "\(name): not found"
+        let attachment = XCTAttachment(string: text)
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     @MainActor
