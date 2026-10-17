@@ -61,12 +61,12 @@ nonisolated final class ScreenshotTests: XCTestCase {
         rotateToLandscape()
         capture(app, "landscape-4-itinerary")
 
-        XCUIDevice.shared.orientation = .portrait
         tap(app.buttons["check-radar"])
-        let appeared = app.descendants(matching: .any)["Rain map"].waitForExistence(timeout: 60)
-        XCTAssertTrue(appeared, "Radar advice never appeared")
-        rotateToLandscape()
+        // The rain map is below the fold in landscape, so wait for the alert toggle above it instead.
+        let loaded = app.switches["Alert Me If Rain Is Coming"].waitForExistence(timeout: 60)
+        XCTAssertTrue(loaded, "Radar advice never appeared")
         app.swipeUp()
+        Thread.sleep(forTimeInterval: 1)
         capture(app, "landscape-5-next-walk")
 
         XCUIDevice.shared.orientation = .portrait
