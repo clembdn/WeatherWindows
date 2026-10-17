@@ -78,6 +78,45 @@ nonisolated final class ScreenshotTests: XCTestCase {
         app.terminate()
     }
 
+    // Swipes did not scroll after rotating, so scroll to each map in portrait first.
+    // The swipeRight and swipeUp captures are fallbacks in case the scroll position resets on rotation.
+    @MainActor
+    func testLandscapeMaps() {
+        XCUIDevice.shared.orientation = .portrait
+        let app = XCUIApplication()
+        app.launchArguments = ["--sample-data", "-replayMode", "YES", "--dark"]
+        app.launch()
+
+        openResults(app)
+        openItinerary(app)
+        app.swipeUp()
+        Thread.sleep(forTimeInterval: 1)
+        rotateToLandscape()
+        capture(app, "landscape-6-route-map-a")
+        app.swipeRight()
+        Thread.sleep(forTimeInterval: 1)
+        capture(app, "landscape-6-route-map-b")
+        app.swipeUp()
+        Thread.sleep(forTimeInterval: 1)
+        capture(app, "landscape-6-route-map-c")
+
+        XCUIDevice.shared.orientation = .portrait
+        Thread.sleep(forTimeInterval: 2)
+        app.swipeDown()
+        app.swipeDown()
+        openNextWalk(app, captureAs: "portrait-7-next-walk")
+        app.swipeUp()
+        Thread.sleep(forTimeInterval: 1)
+        rotateToLandscape()
+        capture(app, "landscape-7-radar-a")
+        app.swipeRight()
+        Thread.sleep(forTimeInterval: 1)
+        capture(app, "landscape-7-radar-b")
+
+        XCUIDevice.shared.orientation = .portrait
+        app.terminate()
+    }
+
     @MainActor
     func testAppearanceSetting() {
         XCUIDevice.shared.appearance = .light

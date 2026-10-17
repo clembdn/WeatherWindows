@@ -7,8 +7,9 @@ on:
       test:
         description: Screenshot test to run
         type: choice
-        default: testLandscapePlanFlow
+        default: testLandscapeMaps
         options:
+          - testLandscapeMaps
           - testLandscapePlanFlow
           - all
           - testLightAppearance

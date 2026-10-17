@@ -38,6 +38,7 @@ jobs:
             -project WeatherWindow/WeatherWindow.xcodeproj \
             -scheme WeatherWindow \
             -destination "$SIMULATOR" \
+            -parallel-testing-enabled NO \
             -resultBundlePath "$RUNNER_TEMP/app.xcresult" \
             CODE_SIGNING_ALLOWED=NO
 
