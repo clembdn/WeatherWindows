@@ -102,8 +102,11 @@ nonisolated final class ScreenshotTests: XCTestCase {
             Thread.sleep(forTimeInterval: 2)
         }
 
-        app.swipeDown()
-        app.swipeDown()
+        // Start the radar part from a fresh launch: after the rotations the radar button could not be found.
+        app.terminate()
+        app.launch()
+        openResults(app)
+        openItinerary(app)
         openNextWalk(app, captureAs: "portrait-7-next-walk")
         let radarMap = app.descendants(matching: .any)["Rain map"]
         record(radarMap, "radar-map-portrait")
