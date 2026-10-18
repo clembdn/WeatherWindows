@@ -67,7 +67,6 @@ nonisolated final class ScreenshotTests: XCTestCase {
         Thread.sleep(forTimeInterval: 1)
 
         tap(app.buttons["check-radar"])
-        // The rain map is below the fold in landscape, so wait for the alert toggle above it instead.
         let loaded = app.switches["Alert Me If Rain Is Coming"].waitForExistence(timeout: 60)
         XCTAssertTrue(loaded, "Radar advice never appeared")
         app.swipeUp()
@@ -78,8 +77,6 @@ nonisolated final class ScreenshotTests: XCTestCase {
         app.terminate()
     }
 
-    // Swipes do nothing once the simulator is in landscape, but rotating keeps the scroll position.
-    // So each attempt scrolls a little in portrait, then rotates and captures.
     @MainActor
     func testLandscapeMaps() {
         XCUIDevice.shared.orientation = .portrait
@@ -102,7 +99,6 @@ nonisolated final class ScreenshotTests: XCTestCase {
             Thread.sleep(forTimeInterval: 2)
         }
 
-        // Start the radar part from a fresh launch: after the rotations the radar button could not be found.
         app.terminate()
         app.launch()
         openResults(app)
@@ -123,7 +119,6 @@ nonisolated final class ScreenshotTests: XCTestCase {
         app.terminate()
     }
 
-    /// Drags the list by a fixed distance in points (positive moves the content down) and holds, so it does not fling.
     @MainActor
     private func drag(_ app: XCUIApplication, by points: CGFloat) {
         let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
@@ -132,7 +127,6 @@ nonisolated final class ScreenshotTests: XCTestCase {
         Thread.sleep(forTimeInterval: 1)
     }
 
-    /// Saves an element's frame as text, so the map height in each orientation can be read exactly.
     @MainActor
     private func record(_ element: XCUIElement, _ name: String) {
         let text = element.exists ? "\(name): \(element.frame)" : "\(name): not found"
@@ -158,7 +152,6 @@ nonisolated final class ScreenshotTests: XCTestCase {
     @MainActor
     private func rotateToLandscape() {
         XCUIDevice.shared.orientation = .landscapeLeft
-        // Give the rotation animation time to finish before the next screenshot.
         Thread.sleep(forTimeInterval: 2)
     }
 
