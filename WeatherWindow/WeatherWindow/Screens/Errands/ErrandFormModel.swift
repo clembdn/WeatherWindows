@@ -35,6 +35,20 @@ final class ErrandFormModel {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    var nameMessage: String? {
+        if trimmedName.isEmpty {
+            return "Enter a name to save this errand."
+        }
+        return duplicateNameMessage
+    }
+
+    var placeMessage: String? {
+        if place == nil {
+            return "Choose a place to save this errand."
+        }
+        return nil
+    }
+
     var hoursMessage: String? {
         if closingMinute <= openingMinute {
             return "Closing time must be after opening time."

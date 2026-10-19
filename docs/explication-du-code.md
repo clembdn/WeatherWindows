@@ -133,6 +133,7 @@ flowchart LR
   - sur la carte Apple : `RadarMapView`, des bandes de pixels en `MapPolygon` ;
   - en grille : `Canvas`, qui marche hors ligne.
 - Le **point orange** avance le long de la vraie rue du premier trajet (`RouteSplitter.point(on:at:)`).
+- **VoiceOver** : la carte de pluie est réglable (`accessibilityAdjustableAction`). Glisser vers le haut ou le bas avance ou recule de 5 min, et VoiceOver lit l'heure, « observed » ou « predicted », et la pluie à ta position.
 - **Alerte pluie** : une seule notification, quand le prochain trajet devient pluvieux (`rainAlert`, `foundRain`).
 
 ### Les tracés sur les cartes (`Services/DirectionsService.swift`)
@@ -316,7 +317,7 @@ flowchart LR
 | Seuil de pluie 25 dBZ | `Radar/RainRate.swift` l. 11 : `rainThresholdDBZ` | ⌘U : `beatsPersistenceOnRecordedDay` peut changer |
 | Une note sur une course | `SavedErrand` + `ErrandFormModel` : `var note = ""` ; un `TextField` dans `ErrandFormView` ; l'afficher dans `ErrandListView` | La valeur par défaut garde les données existantes |
 | 7 runs d'ensemble | `Rain/Ensemble.swift` l. 26 : ajouter des centiles | La médiane reste en premier ; le test attend 5 |
-| Curseur à ±45 min | `Screens/NextWalk/NextWalkView.swift` l. 119 : `in: -45...45` | `Radar/NowcastMaker.swift` l. 51 : `minutes: 1...45` |
+| Curseur à ±45 min | `Screens/NextWalk/NextWalkView.swift` l. 119 : `in: -45...45` | `Radar/NowcastMaker.swift` l. 51 : `minutes: 1...45` ; `CollisionView` : `min(45, …)` et `max(-45, …)` pour VoiceOver |
 
 ## 10. Écarts au cahier des charges (à savoir expliquer)
 

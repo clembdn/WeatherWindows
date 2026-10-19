@@ -85,6 +85,7 @@ struct ResultsView: View {
         }
         .navigationTitle("Results")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear { selectedID = selected?.id }
     }
 }
 

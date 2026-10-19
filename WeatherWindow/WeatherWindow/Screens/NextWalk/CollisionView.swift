@@ -11,7 +11,7 @@ import UIKit
 struct CollisionView: View {
     let result: NextWalkResult
     let nowcast: Nowcast
-    let minuteOffset: Double
+    @Binding var minuteOffset: Double
     let showsMap: Bool
     let data: any PlanDataSource
 
@@ -129,6 +129,13 @@ struct CollisionView: View {
         .accessibilityElement()
         .accessibilityLabel("Rain map")
         .accessibilityValue(accessibilityValue(grid: shownGrid, at: youPixel))
+        .accessibilityAdjustableAction { direction in
+            if direction == .increment {
+                minuteOffset = min(30, minuteOffset + 5)
+            } else if direction == .decrement {
+                minuteOffset = max(-30, minuteOffset - 5)
+            }
+        }
         .task(id: result.recommended?.id) {
             lines = []
             let points = stopPoints

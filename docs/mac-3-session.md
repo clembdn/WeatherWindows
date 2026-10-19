@@ -19,6 +19,7 @@ Après cette séance, il n'y a plus de Mac. La CI GitHub (`macos-26`) continue d
 | Replay en lignes droites ; chaque toucher du graphe redemandait les tracés | `DirectionsService.routeLine` partagé par Live et Replay, tracés gardés dans un dictionnaire | « Apple Maps limite à environ 50 requêtes par minute, donc je garde les tracés déjà reçus. » |
 | Rappel jamais affiché en replay (heure du 3 octobre) | `UNTimeIntervalNotificationTrigger` de `max(5, secondes restantes)` | « En replay, l'heure de départ est dans le passé, donc le rappel arrive dans 5 secondes. » |
 | Le bouton Réglages ouvrait la page générale de l'app | Il ouvre la page Notifications | |
+| Écarts au cahier : but d'About en une phrase, crédit Open-Meteo seulement dans About, plan par défaut pas mis en avant sur le graphe, pas de message pour un nom vide ou un lieu absent, curseur sans la pluie pour VoiceOver | Deux phrases ; crédit sous la prévision ; plan par défaut en losange ; « Enter a name… » et « Choose a place… » ; carte de pluie réglable avec VoiceOver | « VoiceOver : on glisse vers le haut sur la carte, elle avance de 5 min et lit la pluie à ta position. » |
 | « Describe It » : erreur avalée, formulaire vide | Formulaire d'abord rempli sans IA (`fill(fromSentence:)`), puis par Apple Intelligence si elle répond ; sinon message avec l'erreur | « Même sans Apple Intelligence, le nom et les nombres de la phrase remplissent le formulaire. » |
 
 ## Au lab, dans l'ordre
@@ -66,6 +67,8 @@ Terminé quand : aucun plantage, et chaque message est noté.
 **8. Accessibilité.** Xcode ▸ Open Developer Tool ▸ Accessibility Inspector, cible : le simulateur.
 - *Run Audit* sur Plan, Results, Itinerary, Next Walk et New Errand.
 - Pointeur d'inspection : écouter un point du graphe, la carte du trajet, la carte de pluie et le curseur.
+- VoiceOver sur la carte de pluie (Next Walk) : glisser vers le haut, l'heure avance de 5 min, et la pluie à ta position est lue.
+- Results : sans rien toucher, le plan affiché est en losange sur le graphe.
 - Texte au maximum (panneau Settings de l'Inspector), puis About ▸ Appearance ▸ Dark.
 
 Terminé quand : aucun problème bloquant, ou chaque problème est noté (écran, élément).

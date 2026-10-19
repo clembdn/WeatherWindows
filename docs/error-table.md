@@ -33,6 +33,7 @@ Tableau du cahier (§13), avec pour chaque ligne **ce que fait l'app** et **comm
 | Apple Intelligence absent (Mac sans IA) | La section « Describe It » reste, le pied le dit, la phrase est lue sans IA | `readsASentenceWithoutAppleIntelligence` |
 | Apple Intelligence échoue | Formulaire déjà rempli sans IA + message « Apple Intelligence failed: … » | à vérifier au Mac 3 |
 | Lieu de la phrase introuvable | Message sous la section, l'utilisateur choisit le lieu à la main | `fillsTheFormFromADescription` (valeurs ramenées dans les bornes) |
+| Nom vide ou lieu absent | « Enter a name… » ou « Choose a place… » sous le champ, Save désactivé | `needsANameAndAPlace` |
 | Fermeture avant ouverture, durée trop longue | Message sous le champ, Save désactivé | `rejectsClosingBeforeOpening`, `rejectsDurationLongerThanOpeningHours` |
 | Base de données inaccessible | Seul `fatalError` de l'app, comme le modèle Apple : sans stockage, rien n'est utilisable | Lecture du code (`WeatherWindowApp.init`) |
 
@@ -43,4 +44,4 @@ Tableau du cahier (§13), avec pour chaque ligne **ce que fait l'app** et **comm
 | Dynamic Type | Captures `largest-text-*` à chaque push |
 | Mode sombre | Captures `dark-*` à chaque push |
 | Jamais l'information par la couleur seule | Pluie : icône + texte (`RainBadge`) ; carte : pointillés + légende ; graphe : losange + annotation ; bandeau rejeu : texte |
-| VoiceOver | Libellés sur les points du graphe, la carte, la collision view et le curseur ; audit automatique `AccessibilityAuditTests` |
+| VoiceOver | Libellés sur les points du graphe, la carte, la collision view et le curseur ; la carte de pluie se règle par glissement vertical et lit la pluie à ta position ; audit automatique `AccessibilityAuditTests` |

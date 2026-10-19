@@ -59,7 +59,7 @@ struct NextWalkView: View {
                             Text("Radar Grid").tag(false)
                         }
                         .pickerStyle(.segmented)
-                        CollisionView(result: result, nowcast: nowcast, minuteOffset: model.minuteOffset, showsMap: showsMap,
+                        CollisionView(result: result, nowcast: nowcast, minuteOffset: $model.minuteOffset, showsMap: showsMap,
                                       data: data)
                             .listRowInsets(EdgeInsets())
                         TimeSlider(minuteOffset: $model.minuteOffset, now: result.now, lastObservation: nowcast.lastObservation)

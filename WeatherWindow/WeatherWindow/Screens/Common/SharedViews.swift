@@ -54,7 +54,7 @@ struct ForecastNotice: View {
     }
 
     var body: some View {
-        Label(text, systemImage: "info.circle")
+        Label(text + " Weather: Open-Meteo (CC BY 4.0).", systemImage: "info.circle")
             .font(.footnote)
             .foregroundStyle(.secondary)
     }

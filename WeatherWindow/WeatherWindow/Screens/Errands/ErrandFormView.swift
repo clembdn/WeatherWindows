@@ -40,15 +40,19 @@ struct ErrandFormView: View {
                 } header: {
                     Text("Errand")
                 } footer: {
-                    ValidationMessage(text: model.duplicateNameMessage)
+                    ValidationMessage(text: model.nameMessage)
                 }
 
-                Section("Place") {
+                Section {
                     NavigationLink {
                         PlaceSearchView { place in model.place = place }
                     } label: {
                         PlaceLabel(place: model.place, placeholder: "Choose a place")
                     }
+                } header: {
+                    Text("Place")
+                } footer: {
+                    ValidationMessage(text: model.placeMessage)
                 }
 
                 Section {

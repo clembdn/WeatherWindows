@@ -29,7 +29,7 @@ struct AboutView: View {
                             .font(.title2.bold())
                         Text("Version \(version)")
                             .foregroundStyle(.secondary)
-                        Text("WeatherWindow picks the order and departure time of your errands so the walks between them stay as dry as possible.")
+                        Text("WeatherWindow picks the order and departure time of your errands so the walks between them stay as dry as possible. It uses the hourly forecast, and the rain radar extrapolated along your route for the next 30 minutes.")
                     }
                     .padding(.vertical, 4)
                 }

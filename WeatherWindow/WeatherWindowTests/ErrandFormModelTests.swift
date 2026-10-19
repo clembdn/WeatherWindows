@@ -15,12 +15,16 @@ struct ErrandFormModelTests {
     @Test func needsANameAndAPlace() {
         let model = ErrandFormModel()
         #expect(!model.canSave)
+        #expect(model.nameMessage != nil)
+        #expect(model.placeMessage != nil)
 
         model.name = "Library"
         #expect(!model.canSave)
 
         model.place = place
         #expect(model.canSave)
+        #expect(model.nameMessage == nil)
+        #expect(model.placeMessage == nil)
         #expect(model.makeErrand()?.openingMinute == 9 * 60)
         #expect(model.makeErrand()?.closingMinute == 17 * 60)
     }
