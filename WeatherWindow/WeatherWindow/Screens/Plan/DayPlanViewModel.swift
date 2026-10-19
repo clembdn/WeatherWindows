@@ -18,6 +18,7 @@ struct PlanResult {
     let scenarios: [any RainForecast]
     let usesEnsemble: Bool
     let data: any PlanDataSource
+    let departureWindow: ClosedRange<Date>
 
     var schedules: [Schedule] {
         if case .schedules(let found) = outcome {
@@ -258,7 +259,7 @@ final class DayPlanViewModel {
 
             state = .loaded(PlanResult(outcome: outcome, start: start, end: end, endsAtStart: endsAtStart,
                                        errands: errands, stops: stops, scenarios: scenarios, usesEnsemble: usedEnsemble,
-                                       data: data))
+                                       data: data, departureWindow: request.departureWindow))
         } catch {
             let serviceError = ServiceError(error)
             if serviceError == .cancelled {
@@ -273,7 +274,7 @@ final class DayPlanViewModel {
     }
 
     @concurrent
-    private static func rankSchedules(_ request: PlanRequest, scenarios: [any RainForecast]) async -> PlanOutcome {
+    static func rankSchedules(_ request: PlanRequest, scenarios: [any RainForecast]) async -> PlanOutcome {
         Planner().rankSchedules(for: request, scenarios: scenarios)
     }
 }

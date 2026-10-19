@@ -10,6 +10,7 @@ import SwiftUI
 
 struct ResultsView: View {
     let result: PlanResult
+    var showsOtherDays = true
     @Query private var savedPlans: [DayPlan]
     @State private var selectedID: String?
 
@@ -44,6 +45,16 @@ struct ResultsView: View {
                             if let usual, usual.id != fastest.id, usual.id != driest.id {
                                 ScheduleCard(title: "Your Usual Choice", systemImage: "person.crop.circle.badge.checkmark",
                                              result: result, schedule: usual)
+                            }
+                        }
+                    }
+
+                    if showsOtherDays {
+                        Section {
+                            NavigationLink {
+                                BestDayView(today: result)
+                            } label: {
+                                Label("Compare the Next 7 Days", systemImage: "calendar")
                             }
                         }
                     }

@@ -207,6 +207,13 @@ nonisolated final class ScreenshotTests: XCTestCase {
             openResults(app)
             capture(app, "\(prefix)-5-results")
 
+            tap(app.buttons["Compare the Next 7 Days"])
+            XCTAssertTrue(app.navigationBars["Next 7 Days"].waitForExistence(timeout: 10), "Next 7 Days never appeared")
+            XCTAssertTrue(app.staticTexts["Checking the next 7 days…"].waitForNonExistence(timeout: 30), "Next 7 Days never loaded")
+            capture(app, "\(prefix)-8-best-day")
+            tap(app.navigationBars["Next 7 Days"].buttons.firstMatch)
+            XCTAssertTrue(app.navigationBars["Results"].waitForExistence(timeout: 10), "Results never came back")
+
             openItinerary(app)
             capture(app, "\(prefix)-6-itinerary")
 

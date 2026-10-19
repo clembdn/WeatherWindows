@@ -36,7 +36,7 @@ struct OpenMeteoService {
             URLQueryItem(name: "longitude", value: String(format: "%.4f", point.longitude)),
             URLQueryItem(name: "hourly", value: "precipitation_probability,precipitation"),
             URLQueryItem(name: "timeformat", value: "unixtime"),
-            URLQueryItem(name: "forecast_days", value: "2")
+            URLQueryItem(name: "forecast_days", value: "7")
         ]
         return components.url
     }

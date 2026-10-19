@@ -136,6 +136,16 @@ flowchart LR
 - **VoiceOver** : la carte de pluie est réglable (`accessibilityAdjustableAction`). Glisser vers le haut ou le bas avance ou recule de 5 min, et VoiceOver lit l'heure, « observed » ou « predicted », et la pluie à ta position.
 - **Alerte pluie** : une seule notification, quand le prochain trajet devient pluvieux (`rainAlert`, `foundRain`).
 
+### Le meilleur jour de la semaine (`Screens/Plan/BestDayView.swift`, `BestDayViewModel.swift`)
+- Dans Results, *Compare the Next 7 Days* ouvre l'écran **Next 7 Days**.
+- `BestDayViewModel.load` reprend **les mêmes courses, le même départ et la même fenêtre** que le plan du jour (`PlanResult.departureWindow`) :
+  - temps de marche (lus dans le cache) et prévision **7 jours** d'Open-Meteo (`forecast_days=7`) ;
+  - une boucle sur 7 jours : la fenêtre est décalée d'un jour avec `Melbourne.calendar.date(byAdding: .day…)`, ce qui garde la bonne heure même au passage à l'heure d'été ;
+  - pour chaque jour, le **même solveur** (`DayPlanViewModel.rankSchedules`) donne un `PlanResult`.
+- On s'arrête au dernier jour couvert par la prévision : 7 jours en direct, 2 en replay.
+- **Jour le plus sec** (`bestDay`) : le plus petit `robustExposure` du plan le plus sec ; à égalité, le jour le plus proche.
+- Chaque ligne affiche le jour, l'heure de départ et de retour, et `RainBadge`. Le meilleur jour a l'étiquette « Driest Day » (étoile + texte, pas seulement une couleur). Toucher un jour ouvre `ResultsView` pour ce jour : graphe, carte, itinéraire, Save et rappel sont réutilisés tels quels.
+
 ### Les tracés sur les cartes (`Services/DirectionsService.swift`)
 - `DirectionsService.routeLine` demande à Apple Maps le **trajet à pied** et renvoie les points de la `polyline`. Sans réseau : **ligne droite**.
 - Les tracés déjà reçus sont gardés dans un dictionnaire (`savedLines`). Toucher le graphe 10 fois ne redemande rien à Apple Maps, qui limite à environ **50 requêtes par minute**.
@@ -189,7 +199,8 @@ flowchart LR
 | **Screens/Plan/** | |
 | `DayPlanView` | Choix des courses (« 2 of 3 » : max 4, ou moins s'il y a moins de courses), départ, arrivée, fenêtre, bouton Calculate |
 | `DayPlanViewModel` | `calculate` ; `PlanResult` : enregistrer, partager, choix habituel |
-| `ResultsView` | Plans Fastest / Driest / Usual, graphe, carte |
+| `ResultsView` | Plans Fastest / Driest / Usual, lien *Compare the Next 7 Days*, graphe, carte |
+| `BestDayView` / `BestDayViewModel` | Les 7 prochains jours avec les mêmes courses, le jour le plus sec mis en avant |
 | `TradeOffChart` | Swift Charts temps contre pluie, toucher pour choisir |
 | `RouteMapView` | Carte : sec en bleu plein, pluvieux en orange pointillé |
 | `ItineraryView` | Étapes, Save, Remind me, Share, radar |
@@ -260,7 +271,7 @@ flowchart LR
   - doublons, cascade et nullify (`ErrandStoreTests`) ;
   - validation du formulaire et lecture d'une phrase sans IA (`ErrandFormModelTests`) ;
   - point au 3/4 d'un tracé en L (`findsThePointPartWayAlongARoute`) ;
-  - mode hors ligne, localisation refusée, 5e course refusée, plan enregistré une seule fois (`DayPlanViewModelTests`) ;
+  - mode hors ligne, localisation refusée, 5e course refusée, plan enregistré une seule fois, jour le plus sec de la semaine (`DayPlanViewModelTests`) ;
   - 503, 429 et réponse illisible (`OpenMeteoServiceTests`) ;
   - une seule alerte pluie (`NextWalkTests`).
 - **UI** : captures en clair, sombre et très grand texte, et **audit d'accessibilité Apple**.
@@ -301,6 +312,7 @@ flowchart LR
 | *What if the radar is old or missing?* | stale / noFrames / outsideRadar · hourly forecast only + message |
 | *What if something fails?* | one `ServiceError` enum · readable message + Retry · cancel = silent |
 | *What does the ensemble change?* | 40 model runs · keep 5 from dry to wet · solver unchanged (`RainForecast`) |
+| *How does "Next 7 Days" work?* | same errands and window · shifted day by day with Calendar · same Planner · driest robust score wins · only days the forecast covers |
 | *How does it learn my preference?* | each saved plan: 0 fast → 1 dry · average after 2 plans · "Your Usual Choice" |
 | *Where is Apple Intelligence?* | Foundation Models · sentence → `@Generable` errand · simple comma reader first, AI answer replaces it |
 | *How does the demo work offline?* | replay mode · 3 Oct recorded · frozen clock · permanent banner |

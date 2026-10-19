@@ -105,7 +105,8 @@ Tests: serverErrorBecomesARetryLaterMessage, tooManyRequestsIsRateLimited, unrea
 - [x] All of the above compiled and tested on the lab Mac (Mac 2)
 - [ ] Errand from a sentence checked on a Mac with Apple Intelligence
 - [ ] Rain alert banner checked in the simulator
-Tests: bundlesTheWholeRainyDay, scoresEachLeadTimeAndKeepsTheScores, learnsTheUsualTradeOff, sharesThePlanAsText, scoresWithTheEnsembleWhenItIsAvailable, alertsOnceWhenRainHeadsForTheNextWalk, fillsTheFormFromADescription, decodesEnsembleFixture, picksFiveRunsFromDryToWet, rejectsAnEnsembleWithoutRain, buildsEnsembleURL, pixelRoundTripsToTheSamePlace
+- [ ] Next 7 Days: same errands and window on each day of the 7-day forecast, driest day highlighted (checked in the simulator)
+Tests: findsTheDriestDayOfTheWeek, bundlesTheWholeRainyDay, scoresEachLeadTimeAndKeepsTheScores, learnsTheUsualTradeOff, sharesThePlanAsText, scoresWithTheEnsembleWhenItIsAvailable, alertsOnceWhenRainHeadsForTheNextWalk, fillsTheFormFromADescription, decodesEnsembleFixture, picksFiveRunsFromDryToWet, rejectsAnEnsembleWithoutRain, buildsEnsembleURL, pixelRoundTripsToTheSamePlace
 
 ## Calendar
 - [x] 2026-10-07 · Mac 1 · Xcode project, SwiftData models, errand library

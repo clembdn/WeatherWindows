@@ -61,6 +61,27 @@ struct DayPlanViewModelTests {
         #expect(model.progress == nil)
     }
 
+    @Test func findsTheDriestDayOfTheWeek() async throws {
+        let model = morningModel()
+        var data = FakeData()
+        for hour in 0..<72 {
+            let isTomorrow = hour >= 24 && hour < 48
+            data.forecast.append(ForecastHour(time: at(0, 0).addingTimeInterval(Double(hour) * 3600),
+                                              precipitationProbability: 100, precipitation: isTomorrow ? 0 : 1))
+        }
+        await model.calculate(errands: insertErrands(["Post"]), data: data)
+        let week = BestDayViewModel()
+
+        await week.load(from: try #require(model.result))
+
+        guard case .loaded(let days) = week.state else {
+            Issue.record("Expected days, got \(week.state)")
+            return
+        }
+        #expect(days.count == 3)
+        #expect(week.bestDay?.day == Melbourne.calendar.date(byAdding: .day, value: 1, to: at(10, 0)))
+    }
+
     @Test func reportsAnOfflineForecast() async {
         let model = morningModel()
         var data = FakeData()

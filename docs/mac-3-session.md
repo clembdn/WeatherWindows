@@ -43,6 +43,13 @@ Terminé quand :
 
 Terminé quand : les tracés suivent les rues, et Next Walk n'affiche pas « No radar images are available ».
 
+**4 bis. Next 7 Days.** Toujours sans replay : Results ▸ *Compare the Next 7 Days*. Puis avec le replay activé.
+
+Terminé quand :
+- 7 jours en direct (2 en replay), une seule ligne « Driest Day » ;
+- toucher un jour ouvre ses Results, avec des heures de ce jour-là ;
+- VoiceOver lit chaque ligne d'un coup (jour, départ, pluie).
+
 **5. Apple Intelligence.** Errands ▸ + ▸ taper « Post office, 10 min, open 9 to 5 » ▸ *Fill In the Form*.
 
 Terminé quand : le nom, 10 min, 9:00–17:00 et un lieu sont remplis. Noter mot pour mot le message rouge (« Apple Intelligence failed: … ») s'il y en a un, et le pied de la section.
@@ -76,7 +83,7 @@ Terminé quand : aucun problème bloquant, ou chaque problème est noté (écran
 **9. Vidéo de démo de secours** (replay activé). Simulateur ▸ File ▸ Record Screen. Environ 3 min, dans cet ordre :
 1. Errands ▸ « Describe It » ;
 2. Plan, 3 courses ▸ Calculate ;
-3. Results : toucher le graphe, la carte change ;
+3. Results : toucher le graphe, la carte change, puis *Compare the Next 7 Days* ;
 4. Itinerary ▸ *Remind Me* ▸ bannière ;
 5. Next Walk : conseil, curseur, Map puis Radar Grid ;
 6. About ▸ précision du nowcast.

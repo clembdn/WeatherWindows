@@ -26,6 +26,8 @@ Tableau du cahier (§13), avec pour chaque ligne **ce que fait l'app** et **comm
 | Plus de 4 courses cochées | « You can plan up to 4 errands at once. » | `refusesAFifthErrand` |
 | Course cochée puis supprimée dans Errands | Sa place est libérée, on peut en cocher une autre | `forgetsADeletedErrand` ; vu au Mac 2 |
 | « Save This Plan » appuyé deux fois (ou itinéraire rouvert) | Un seul plan enregistré, « Plan saved » affiché | `savesTheSamePlanOnlyOnce` ; vu au Mac 2 |
+| Next 7 Days hors ligne | Message + Retry | `LoadState` de `BestDayViewModel` ; à provoquer au Mac |
+| Jours au-delà de la prévision (replay : 2 jours) | Pas affichés, le pied de liste le dit | `findsTheDriestDayOfTheWeek` (3 jours de prévision → 3 lignes) |
 | Prévision d'ensemble indisponible (réseau, rejeu) | Repli silencieux sur la prévision décalée, la note des résultats le dit | `scoresWithTheEnsembleWhenItIsAvailable` |
 | Ensemble Open-Meteo sans aucun run de pluie | Réponse refusée comme illisible | `rejectsAnEnsembleWithoutRain` |
 | Score du radar en direct hors ligne (écran Nowcast Accuracy) | Message + Retry ; les scores déjà enregistrés restent affichés | `LoadState` de `VerificationViewModel` ; à provoquer au Mac |
