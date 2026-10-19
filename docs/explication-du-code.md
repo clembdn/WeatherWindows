@@ -84,7 +84,7 @@ Chaque étape s'affiche dans `progress` (« Getting walking times… »).
 - **Simulation** (`simulate`) :
   - on **attend** si le lieu est encore fermé ;
   - on **rejette** le plan si la tâche finit après la fermeture.
-- **Pluie d'un trajet** (`WalkRain`) : un point par **minute**, en **ligne droite**. On fait la somme poids × minutes.
+- **Pluie d'un trajet** (`WalkRain`) : un point par **minute**, en **ligne droite**. On fait la somme poids × minutes. Les **cartes**, elles, dessinent les vraies rues (voir plus bas).
 - **Score robuste** = le **pire** des 5 scénarios (`Schedule.robustExposure`).
 - **Front de Pareto** (`TradeOffs.best`) : on garde les plans qu'aucun autre ne bat à la fois en **temps** et en **pluie**.
 - **Rien ne marche** : la course qui bloque le plus de plans est annoncée (`NoPlanReason.closesTooEarly`).
@@ -132,7 +132,24 @@ flowchart LR
 - **Collision view** : un curseur de −30 (radar **observé**) à +30 (radar **prévu**, de plus en plus pâle). Deux affichages :
   - sur la carte Apple : `RadarMapView`, des bandes de pixels en `MapPolygon` ;
   - en grille : `Canvas`, qui marche hors ligne.
+- Le **point orange** avance le long de la vraie rue du premier trajet (`RouteSplitter.point(on:at:)`).
 - **Alerte pluie** : une seule notification, quand le prochain trajet devient pluvieux (`rainAlert`, `foundRain`).
+
+### Les tracés sur les cartes (`Services/DirectionsService.swift`)
+- `DirectionsService.routeLine` demande à Apple Maps le **trajet à pied** et renvoie les points de la `polyline`. Sans réseau : **ligne droite**.
+- Les tracés déjà reçus sont gardés dans un dictionnaire (`savedLines`). Toucher le graphe 10 fois ne redemande rien à Apple Maps, qui limite à environ **50 requêtes par minute**.
+- `LiveData` et `ReplayData` utilisent la même fonction ; `FakeData` garde la ligne droite (tests sans réseau).
+- `RouteMapView` (Results, Itinerary) et `CollisionView` (Next Walk) chargent les tracés de la même façon : `@State lines` + `.task(id:)`.
+
+### Les notifications (`Services/NotificationService.swift`)
+- La permission est demandée au **premier appui** sur *Remind Me*.
+- Le rappel est un `UNTimeIntervalNotificationTrigger` de `max(5, secondes restantes)` : si l'heure est déjà passée (toujours le cas en replay, le 3 octobre), il arrive dans **5 s**.
+- Refus : le bouton *Turn On Notifications in Settings* ouvre la page Notifications de l'app.
+
+### Apple Intelligence (`Services/ErrandAssistant.swift`)
+- **Foundation Models** : `LanguageModelSession` + `respond(to:generating:)` remplit une struct **`@Generable`** (`ErrandDraft`). Les `@Guide` donnent la description et les bornes de chaque champ.
+- `fillIn` remplit d'abord le formulaire **sans IA** (`ErrandFormModel.fill(fromSentence:)`) : le nom avant la 1re virgule, « 10 min » pour la durée, « 9 to 5 » pour les heures (5 → 17). Limite : « 10pm » n'est pas compris.
+- Si Apple Intelligence est disponible, sa réponse remplace ces valeurs. Si elle échoue, le message rouge donne l'erreur.
 
 ### Les données (`Database/`)
 - `SavedErrand` : une course de la bibliothèque. `DayPlan` + `PlannedStop` : un jour enregistré. `CachedWalkingTime` : un temps de marche gardé 7 jours. `VerificationScore` : un score de précision.
@@ -155,7 +172,8 @@ flowchart LR
 
 ### Le mode replay (pour la démo)
 - About ▸ *Replay a recorded rainy morning* : `ReplayData` remplace les vrais services.
-- **Heure figée** au 3 octobre à 11:05, lignes droites à 1,3 m/s, 83 tuiles radar embarquées.
+- **Heure figée** au 3 octobre à 11:05, temps de marche en ligne droite à 1,3 m/s, 83 tuiles radar embarquées.
+- Les **tracés** des cartes viennent d'Apple Maps s'il y a du réseau, sinon ce sont des lignes droites.
 - **Hors ligne**, avec un **bandeau permanent** pour ne jamais confondre la pluie enregistrée avec la météo du jour.
 
 ---
@@ -183,7 +201,7 @@ flowchart LR
 | `RainColor` | dBZ → couleur et mots pour VoiceOver |
 | **Screens/Errands/** | |
 | `ErrandListView` | Liste, recherche, toucher pour modifier, glisser pour supprimer |
-| `ErrandFormView` / `ErrandFormModel` | Formulaire, validation, « Describe It », section « Used in Plans » (via `plannedStops` → `plan`) |
+| `ErrandFormView` / `ErrandFormModel` | Formulaire, validation, « Describe It » (avec ou sans IA), section « Used in Plans » (via `plannedStops` → `plan`) |
 | `PlaceSearchView` | Suggestions Apple Maps en direct |
 | **Screens/About/** | |
 | `AboutView` | Identité, crédits, méthodes, réglages (dont le thème Système / Clair / Sombre) |
@@ -195,10 +213,10 @@ flowchart LR
 | `PlanDataSource` | Protocole + `LiveData` + `ReplayData` |
 | `OpenMeteoService` | Prévision et ensemble : URL, téléchargement, JSON |
 | `RainViewerService` | Liste des images radar + 4 tuiles décodées |
-| `DirectionsService` | Temps de marche (cache 7 j, 1 nouvel essai après 3 s) et tracés |
+| `DirectionsService` | Temps de marche (cache SwiftData 7 j, 1 nouvel essai après 3 s) et tracés (gardés en mémoire) |
 | `LocationService` | Position, le `LocationProvider` du lab 7 en `async` |
 | `PlaceSearchService` | `MKLocalSearchCompleter` autour de Melbourne |
-| `NotificationService` | Permission, rappel de départ, alerte pluie |
+| `NotificationService` | Permission, rappel de départ (5 s si l'heure est passée), alerte pluie |
 | `ErrandAssistant` | Apple Intelligence : phrase → course (`@Generable`) |
 | **Planner/** | |
 | `Planner` | Ordres × départs → simulation → score → Pareto |
@@ -220,7 +238,7 @@ flowchart LR
 | `RainRate` | dBZ → mm/h → poids |
 | `NowcastScorer` | CSI contre persistance |
 | `RecordedRadar` | Lit les tuiles enregistrées |
-| **Helpers/** | `GeoPoint`, `Melbourne` (fuseau), `PlanText` (phrases), `ServiceError`, `LoadState`, `RouteSplitter` |
+| **Helpers/** | `GeoPoint`, `Melbourne` (fuseau), `PlanText` (phrases), `ServiceError`, `LoadState`, `RouteSplitter` (morceaux et points d'un tracé) |
 
 ---
 
@@ -239,7 +257,8 @@ flowchart LR
   - radar trop vieux ou hors zone.
 - **App** :
   - doublons, cascade et nullify (`ErrandStoreTests`) ;
-  - validation du formulaire (`ErrandFormModelTests`) ;
+  - validation du formulaire et lecture d'une phrase sans IA (`ErrandFormModelTests`) ;
+  - point au 3/4 d'un tracé en L (`findsThePointPartWayAlongARoute`) ;
   - mode hors ligne, localisation refusée, 5e course refusée, plan enregistré une seule fois (`DayPlanViewModelTests`) ;
   - 503, 429 et réponse illisible (`OpenMeteoServiceTests`) ;
   - une seule alerte pluie (`NextWalkTests`).
@@ -270,7 +289,7 @@ flowchart LR
 | *How does the solver work?* | all orders × departures every 5 min · simulate the day · worst of 5 scenarios · Pareto frontier |
 | *Why the worst case?* | robust · rain 15–30 min early or late · like taking the earlier train |
 | *What is the Pareto frontier?* | keep plans nobody beats on time AND rain · like choosing a flight |
-| *Why straight lines?* | radar pixel ≈ 480 m · same pixel as the real path · no extra MapKit calls |
+| *Why straight lines?* | only in the solver · radar pixel ≈ 480 m · same pixel as the real path · no extra MapKit calls · maps use the real Apple Maps route, cached |
 | *How does the nowcast work?* | PNG → dBZ · block matching · semi-Lagrangian advection · blend with forecast over 30 min |
 | *Does it really work?* | CSI vs persistence · 0.314 vs 0.291 at 20 min · modest gain, said honestly |
 | *Why your own PNG decoder?* | exact colours · premultiplied alpha in Core Graphics · zlib from Foundation |
@@ -282,7 +301,7 @@ flowchart LR
 | *What if something fails?* | one `ServiceError` enum · readable message + Retry · cancel = silent |
 | *What does the ensemble change?* | 40 model runs · keep 5 from dry to wet · solver unchanged (`RainForecast`) |
 | *How does it learn my preference?* | each saved plan: 0 fast → 1 dry · average after 2 plans · "Your Usual Choice" |
-| *Where is Apple Intelligence?* | Foundation Models · sentence → `@Generable` errand · hidden if unavailable |
+| *Where is Apple Intelligence?* | Foundation Models · sentence → `@Generable` errand · simple comma reader first, AI answer replaces it |
 | *How does the demo work offline?* | replay mode · 3 Oct recorded · frozen clock · permanent banner |
 | *Hardest part?* | RainViewer stopped its nowcast → wrote mine · Xcode re-encoded PNGs → `.tile` · uniform rain → median filter + global vector |
 | *Did you use AI?* | yes, stated on About · design and parts of code · reviewed, run, simplified, explained |
@@ -297,7 +316,18 @@ flowchart LR
 | Seuil de pluie 25 dBZ | `Radar/RainRate.swift` l. 11 : `rainThresholdDBZ` | ⌘U : `beatsPersistenceOnRecordedDay` peut changer |
 | Une note sur une course | `SavedErrand` + `ErrandFormModel` : `var note = ""` ; un `TextField` dans `ErrandFormView` ; l'afficher dans `ErrandListView` | La valeur par défaut garde les données existantes |
 | 7 runs d'ensemble | `Rain/Ensemble.swift` l. 26 : ajouter des centiles | La médiane reste en premier ; le test attend 5 |
-| Curseur à ±45 min | `Screens/NextWalk/NextWalkView.swift` l. 118 : `in: -45...45` | `Radar/NowcastMaker.swift` l. 51 : `minutes: 1...45` |
+| Curseur à ±45 min | `Screens/NextWalk/NextWalkView.swift` l. 119 : `in: -45...45` | `Radar/NowcastMaker.swift` l. 51 : `minutes: 1...45` |
+
+## 10. Écarts au cahier des charges (à savoir expliquer)
+
+| Cahier | Fait | Pourquoi |
+| --- | --- | --- |
+| Package Swift séparé, testé sous Linux | Tout dans la cible de l'app | Plus simple à lire et à expliquer ; mêmes tests, lancés par ⌘U et la CI |
+| Tuiles radar en parallèle (`TaskGroup`), cache `actor` | 4 images d'une seule tuile, une par une | 4 petites requêtes toutes les 10 min ; le parallélisme n'apporte rien |
+| `chartOverlay` + `ChartProxy`, point le plus proche en 2D | `chartXSelection`, puis le plan dont la durée est la plus proche | API Swift Charts plus récente, moins de code |
+| `MKMapView` + overlay et renderer | `Map` SwiftUI + `MapPolygon` | Pas de UIKit dans les vues |
+| `FrameDecoder` Core Graphics | Décodeur PNG en Swift pur | L'alpha prémultiplié de Core Graphics fausse les couleurs |
+| Pluie lue sur le vrai trajet | Solveur en ligne droite, cartes sur le vrai trajet | Pixel radar ≈ 480 m ; 20 tracés de plus dépasseraient la limite d'Apple Maps |
 
 ## Mode sombre
 

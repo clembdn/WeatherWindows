@@ -129,19 +129,21 @@ private struct DescribeErrandSection: View {
     @State private var errorMessage: String?
 
     var body: some View {
-        if ErrandAssistant.isAvailable {
-            Section {
-                TextField("Post office, 10 min, open 9 to 5", text: $sentence, axis: .vertical)
-                Button("Fill In the Form", systemImage: "sparkles", action: fillIn)
-                    .disabled(sentence.trimmingCharacters(in: .whitespaces).isEmpty || isFilling)
-                if isFilling {
-                    ProgressView("Reading your sentence…")
-                }
-                ValidationMessage(text: errorMessage)
-            } header: {
-                Text("Describe It")
-            } footer: {
+        Section {
+            TextField("Post office, 10 min, open 9 to 5", text: $sentence, axis: .vertical)
+            Button("Fill In the Form", systemImage: "sparkles", action: fillIn)
+                .disabled(sentence.trimmingCharacters(in: .whitespaces).isEmpty || isFilling)
+            if isFilling {
+                ProgressView("Reading your sentence…")
+            }
+            ValidationMessage(text: errorMessage)
+        } header: {
+            Text("Describe It")
+        } footer: {
+            if ErrandAssistant.isAvailable {
                 Text("Apple Intelligence fills in the form on your iPhone. Check every field before saving.")
+            } else {
+                Text("Apple Intelligence isn't available, so the form is filled from the numbers in your sentence. Check every field before saving.")
             }
         }
     }
@@ -151,19 +153,24 @@ private struct DescribeErrandSection: View {
         errorMessage = nil
         Task {
             defer { isFilling = false }
-            do {
-                let draft = try await ErrandAssistant.draft(from: sentence)
-                model.fill(name: draft.name, durationMinutes: draft.durationMinutes,
-                           openingHour: draft.openingHour, closingHour: draft.closingHour)
-                let search = PlaceSearchService()
-                search.query = draft.placeQuery
+            model.fill(fromSentence: sentence)
+            var placeQuery = model.name
+            if ErrandAssistant.isAvailable {
                 do {
-                    model.place = try await search.placeForQuery()
+                    let draft = try await ErrandAssistant.draft(from: sentence)
+                    model.fill(name: draft.name, durationMinutes: draft.durationMinutes,
+                               openingHour: draft.openingHour, closingHour: draft.closingHour)
+                    placeQuery = draft.placeQuery
                 } catch {
-                    errorMessage = "“\(draft.placeQuery)” wasn't found. Choose the place below."
+                    errorMessage = "Apple Intelligence failed: \(error.localizedDescription)"
                 }
+            }
+            let search = PlaceSearchService()
+            search.query = placeQuery
+            do {
+                model.place = try await search.placeForQuery()
             } catch {
-                errorMessage = "That sentence couldn't be read. Fill in the form instead."
+                errorMessage = "“\(placeQuery)” wasn't found. Choose the place below."
             }
         }
     }

@@ -68,6 +68,17 @@ struct ErrandFormModelTests {
         #expect(model.hoursMessage == nil)
     }
 
+    @Test func readsASentenceWithoutAppleIntelligence() {
+        let model = ErrandFormModel()
+
+        model.fill(fromSentence: "Post office, 10 min, open 9 to 5")
+
+        #expect(model.name == "Post office")
+        #expect(model.durationMinutes == 10)
+        #expect(model.openingMinute == 9 * 60)
+        #expect(model.closingMinute == 17 * 60)
+    }
+
     private func filledModel() -> ErrandFormModel {
         let model = ErrandFormModel()
         model.name = "Library"

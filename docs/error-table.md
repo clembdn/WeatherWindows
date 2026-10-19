@@ -8,7 +8,8 @@ Tableau du cahier (§13), avec pour chaque ligne **ce que fait l'app** et **comm
 | Open-Meteo 5xx | « Weather service unavailable, try again in a minute. » + Retry | `serverErrorBecomesARetryLaterMessage` |
 | Open-Meteo 429 | « Too many requests… » | `tooManyRequestsIsRateLimited` |
 | Réponse illisible | « The service sent an unexpected answer. » | `unreadableBodyIsAnInvalidResponse`, `rejectsMismatchedArrays` |
-| MapKit limite les requêtes | Requêtes envoyées une par une ; une nouvelle tentative après 3 s, puis message | `DirectionsService.walkingTime` ; à provoquer au Mac |
+| MapKit limite les requêtes | Requêtes envoyées une par une ; une nouvelle tentative après 3 s, puis message. Tracés gardés en mémoire, pas redemandés à chaque toucher du graphe | `DirectionsService.walkingTime`, `savedLines` ; à provoquer au Mac |
+| Pas d'itinéraire Apple Maps (hors ligne, replay sans réseau) | La carte trace une ligne droite, le reste de l'écran marche | `DirectionsService.routeLine` ; à provoquer au Mac (Wi-Fi coupé) |
 | Aucun planning possible | « Post closes at 13:00, so it can't fit in this window… » | `reportsWhyNothingFits`, `explainsWhichErrandClosesTooEarly`, `adviceExplainsWhenNothingFits` |
 | Aucune pluie dans les 30 min | « No rain expected on your walks in the next 30 minutes. » | `advisesLeavingNowWhenDry` ; capture `*-7-next-walk` |
 | Images radar trop anciennes | Bascule sur la prévision horaire + message « too old to use » | `engineRefusesStaleRadar`, `fallsBackToTheForecastWhenRadarIsStale` |
@@ -16,7 +17,8 @@ Tableau du cahier (§13), avec pour chaque ligne **ce que fait l'app** et **comm
 | Trajet hors de la zone radar (Melbourne) | Bascule sur la prévision + message « The radar only covers the Melbourne area » | `engineIgnoresPlacesOffTheRadarTile` |
 | Écran quitté pendant un calcul | Aucun message d'erreur, l'écran revient à son état de départ | `cancellationIsNotReportedAsAnError` |
 | Localisation refusée | Départ basculé sur « Choose Place » + message | `switchesToAChosenStartWhenLocationIsDenied` ; à provoquer au Mac (Réglages) |
-| Notifications refusées | Message + bouton « Turn On Notifications in Settings » | `NotificationService.isDenied` ; à provoquer au Mac |
+| Notifications refusées | Message + bouton « Turn On Notifications in Settings » qui ouvre la page Notifications de l'app | `NotificationService.isDenied` ; à provoquer au Mac |
+| Heure du rappel déjà passée (toujours le cas en replay) | Rappel dans 5 s, l'heure affichée est celle du rappel | `NotificationService.scheduleReminder` ; à vérifier au Mac |
 | Bibliothèque vide | `ContentUnavailableView` avec bouton « Add Errand » | Vu au Mac 2 (premier lancement après suppression de l'app) |
 | Nom de course en double | « You already have an errand called “Coles”. » | `rejectsDuplicateNameIgnoringCaseAccentsAndSpaces` ; vu au Mac 2 |
 | Course renommée avec le nom d'une autre | Même message ; garder son propre nom reste permis | `editingRejectsAnotherErrandsName` |
@@ -28,8 +30,9 @@ Tableau du cahier (§13), avec pour chaque ligne **ce que fait l'app** et **comm
 | Ensemble Open-Meteo sans aucun run de pluie | Réponse refusée comme illisible | `rejectsAnEnsembleWithoutRain` |
 | Score du radar en direct hors ligne (écran Nowcast Accuracy) | Message + Retry ; les scores déjà enregistrés restent affichés | `LoadState` de `VerificationViewModel` ; à provoquer au Mac |
 | Pluie qui arrive sur le prochain trajet | Une seule alerte, pas une toutes les 10 min | `alertsOnceWhenRainHeadsForTheNextWalk` |
-| Apple Intelligence absent (iOS 18, Mac sans IA) | La section « Describe It » n'apparaît pas, le formulaire reste normal | `ErrandAssistant.isAvailable` ; à vérifier au Mac 3 |
-| Phrase illisible, ou lieu de la phrase introuvable | Message sous la section, l'utilisateur remplit à la main | `fillsTheFormFromADescription` (valeurs ramenées dans les bornes) |
+| Apple Intelligence absent (Mac sans IA) | La section « Describe It » reste, le pied le dit, la phrase est lue sans IA | `readsASentenceWithoutAppleIntelligence` |
+| Apple Intelligence échoue | Formulaire déjà rempli sans IA + message « Apple Intelligence failed: … » | à vérifier au Mac 3 |
+| Lieu de la phrase introuvable | Message sous la section, l'utilisateur choisit le lieu à la main | `fillsTheFormFromADescription` (valeurs ramenées dans les bornes) |
 | Fermeture avant ouverture, durée trop longue | Message sous le champ, Save désactivé | `rejectsClosingBeforeOpening`, `rejectsDurationLongerThanOpeningHours` |
 | Base de données inaccessible | Seul `fatalError` de l'app, comme le modèle Apple : sans stockage, rien n'est utilisable | Lecture du code (`WeatherWindowApp.init`) |
 

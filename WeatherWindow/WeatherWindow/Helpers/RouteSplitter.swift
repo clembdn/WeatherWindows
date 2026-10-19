@@ -47,6 +47,10 @@ nonisolated enum RouteSplitter {
         return result
     }
 
+    static func point(on line: [GeoPoint], at fraction: Double) -> GeoPoint {
+        slice(line, from: 0, to: fraction).last ?? line[0]
+    }
+
     static func segments(of line: [GeoPoint], rainyMinutes: [Bool]) -> [Segment] {
         if rainyMinutes.isEmpty {
             return line.count > 1 ? [Segment(points: line, isRainy: false)] : []

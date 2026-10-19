@@ -66,6 +66,24 @@ final class ErrandFormModel {
         closing = Melbourne.date(minute: min(23, max(1, closingHour)) * 60, on: opening)
     }
 
+    func fill(fromSentence sentence: String) {
+        let parts = sentence.split(separator: ",")
+        var duration = 15
+        var opening = 9
+        var closing = 17
+        for part in parts.dropFirst() {
+            let numbers = part.split { !$0.isNumber }.compactMap { Int($0) }
+            if part.contains("min") && numbers.count == 1 {
+                duration = numbers[0]
+            } else if numbers.count == 2 {
+                opening = numbers[0]
+                closing = numbers[1] < numbers[0] ? numbers[1] + 12 : numbers[1]
+            }
+        }
+        let name = String(parts.first ?? "").trimmingCharacters(in: .whitespaces)
+        fill(name: name, durationMinutes: duration, openingHour: opening, closingHour: closing)
+    }
+
     func showDuplicateName() {
         duplicateNameMessage = "You already have an errand called “\(trimmedName)”."
     }

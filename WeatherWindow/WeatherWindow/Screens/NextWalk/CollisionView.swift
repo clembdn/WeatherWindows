@@ -13,6 +13,9 @@ struct CollisionView: View {
     let nowcast: Nowcast
     let minuteOffset: Double
     let showsMap: Bool
+    let data: any PlanDataSource
+
+    @State private var lines: [[GeoPoint]] = []
 
     private var time: Date { result.now.addingTimeInterval(minuteOffset * 60) }
     private var isPredicted: Bool { time > nowcast.lastObservation }
@@ -37,9 +40,13 @@ struct CollisionView: View {
         return max(0.45, 1 - time.timeIntervalSince(nowcast.lastObservation) / 3600)
     }
 
-    private var routePoints: [GeoPoint] {
+    private var stopPoints: [GeoPoint] {
         guard let schedule = result.recommended else { return [result.input.current.location] }
         return [result.input.current.location] + schedule.order.map(\.location) + [result.input.end.location]
+    }
+
+    private var routePoints: [GeoPoint] {
+        lines.isEmpty ? stopPoints : lines.flatMap { $0 }
     }
 
     private var yourPosition: GeoPoint {
@@ -53,8 +60,7 @@ struct CollisionView: View {
             return destination
         }
         let progress = time.timeIntervalSince(walk.departure) / walk.arrival.timeIntervalSince(walk.departure)
-        return GeoPoint(latitude: start.latitude + (destination.latitude - start.latitude) * progress,
-                        longitude: start.longitude + (destination.longitude - start.longitude) * progress)
+        return RouteSplitter.point(on: lines.first ?? [start, destination], at: progress)
     }
 
     var body: some View {
@@ -63,6 +69,10 @@ struct CollisionView: View {
         let shownGrid = grid
         let cells = rainCells(of: shownGrid, in: region)
         let route = routePoints.map { point in
+            let pixel = pixelConverter.pixel(for: point)
+            return CGPoint(x: pixel.x, y: pixel.y)
+        }
+        let stops = stopPoints.map { point in
             let pixel = pixelConverter.pixel(for: point)
             return CGPoint(x: pixel.x, y: pixel.y)
         }
@@ -89,7 +99,7 @@ struct CollisionView: View {
                     path.addLines(route)
                     context.stroke(path, with: .color(.primary),
                                    style: StrokeStyle(lineWidth: 3 / scale, lineCap: .round, lineJoin: .round))
-                    for point in route {
+                    for point in stops {
                         context.fill(Path(ellipseIn: CGRect(x: point.x - 4 / scale, y: point.y - 4 / scale,
                                                             width: 8 / scale, height: 8 / scale)), with: .color(.primary))
                     }
@@ -119,6 +129,15 @@ struct CollisionView: View {
         .accessibilityElement()
         .accessibilityLabel("Rain map")
         .accessibilityValue(accessibilityValue(grid: shownGrid, at: youPixel))
+        .task(id: result.recommended?.id) {
+            lines = []
+            let points = stopPoints
+            var newLines: [[GeoPoint]] = []
+            for index in 1..<points.count {
+                newLines.append(await data.routeLine(from: points[index - 1], to: points[index]))
+            }
+            lines = newLines
+        }
     }
 
     private func rainCells(of grid: RainGrid, in region: PixelBox) -> [(x: Double, y: Double, color: Color)] {

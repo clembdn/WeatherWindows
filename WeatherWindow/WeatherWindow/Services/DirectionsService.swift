@@ -54,7 +54,7 @@ struct DirectionsService {
         if origin == destination {
             return 0
         }
-        let request = walkingRequest(from: origin, to: destination)
+        let request = Self.walkingRequest(from: origin, to: destination)
         do {
             return try await MKDirections(request: request).calculateETA().expectedTravelTime
         } catch let error as MKError where error.code == .loadingThrottled {
@@ -63,17 +63,25 @@ struct DirectionsService {
         }
     }
 
-    func routeLine(from origin: GeoPoint, to destination: GeoPoint) async -> [GeoPoint] {
+    private static var savedLines: [String: [GeoPoint]] = [:]
+
+    static func routeLine(from origin: GeoPoint, to destination: GeoPoint) async -> [GeoPoint] {
         let straightLine = [origin, destination]
         if origin == destination {
             return straightLine
+        }
+        let key = CachedWalkingTime.key(from: origin, to: destination)
+        if let saved = savedLines[key] {
+            return saved
         }
         do {
             let response = try await MKDirections(request: walkingRequest(from: origin, to: destination)).calculate()
             guard let polyline = response.routes.first?.polyline else { return straightLine }
             var coordinates = [CLLocationCoordinate2D](repeating: kCLLocationCoordinate2DInvalid, count: polyline.pointCount)
             polyline.getCoordinates(&coordinates, range: NSRange(location: 0, length: polyline.pointCount))
-            return coordinates.map { GeoPoint($0) }
+            let line = coordinates.map { GeoPoint($0) }
+            savedLines[key] = line
+            return line
         } catch {
             logger.info("No walking route, drawing a straight line: \(error.localizedDescription)")
             return straightLine
@@ -90,7 +98,7 @@ struct DirectionsService {
         return entry.seconds
     }
 
-    private func walkingRequest(from origin: GeoPoint, to destination: GeoPoint) -> MKDirections.Request {
+    private static func walkingRequest(from origin: GeoPoint, to destination: GeoPoint) -> MKDirections.Request {
         let request = MKDirections.Request()
         request.source = MKMapItem(placemark: MKPlacemark(coordinate: origin.coordinate))
         request.destination = MKMapItem(placemark: MKPlacemark(coordinate: destination.coordinate))

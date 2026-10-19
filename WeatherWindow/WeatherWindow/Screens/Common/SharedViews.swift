@@ -103,7 +103,7 @@ struct NotificationSettingsButton: View {
 
     var body: some View {
         Button("Turn On Notifications in Settings", systemImage: "gear") {
-            if let url = URL(string: UIApplication.openSettingsURLString) {
+            if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
                 openURL(url)
             }
         }
@@ -112,7 +112,7 @@ struct NotificationSettingsButton: View {
 
 struct ReplayBanner: View {
     private var label: String {
-        let style = Date.FormatStyle(timeZone: Melbourne.timeZone).day().month(.abbreviated).hour().minute()
+        let style = Date.FormatStyle(timeZone: Melbourne.timeZone).day().month(.abbreviated).year().hour().minute()
         return "Replay · " + ReplayData.now.formatted(style)
     }
 

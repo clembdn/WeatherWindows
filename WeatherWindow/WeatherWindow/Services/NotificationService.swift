@@ -29,11 +29,11 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         content.title = "Time to leave"
         content.body = body
         content.sound = .default
-        let moment = Melbourne.calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
-        let trigger = UNCalendarNotificationTrigger(dateMatching: moment, repeats: false)
+        let seconds = max(5, date.timeIntervalSinceNow)
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)
         do {
             try await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: content, trigger: trigger))
-            return "Reminder set for \(Melbourne.time(date))."
+            return "Reminder set for \(Melbourne.time(.now.addingTimeInterval(seconds)))."
         } catch {
             return "The reminder couldn't be set. \(error.localizedDescription)"
         }

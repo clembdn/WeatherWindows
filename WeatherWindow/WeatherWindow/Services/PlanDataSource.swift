@@ -47,7 +47,7 @@ struct LiveData: PlanDataSource {
     }
 
     func routeLine(from origin: GeoPoint, to destination: GeoPoint) async -> [GeoPoint] {
-        await DirectionsService(context: context).routeLine(from: origin, to: destination)
+        await DirectionsService.routeLine(from: origin, to: destination)
     }
 }
 
@@ -95,6 +95,6 @@ struct ReplayData: PlanDataSource {
     }
 
     func routeLine(from origin: GeoPoint, to destination: GeoPoint) async -> [GeoPoint] {
-        [origin, destination]
+        await DirectionsService.routeLine(from: origin, to: destination)
     }
 }

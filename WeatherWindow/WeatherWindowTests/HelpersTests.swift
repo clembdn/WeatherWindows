@@ -44,3 +44,14 @@ import Testing
     #expect(segments[0].points.count == 3)
     #expect(abs((segments[1].points.last?.longitude ?? 0) - 0.04) < 1e-9)
 }
+
+@Test func findsThePointPartWayAlongARoute() {
+    let line = [GeoPoint(latitude: 0, longitude: 0), GeoPoint(latitude: 0, longitude: 0.01),
+                GeoPoint(latitude: 0.01, longitude: 0.01)]
+
+    let point = RouteSplitter.point(on: line, at: 0.75)
+
+    #expect(abs(point.latitude - 0.005) < 1e-9)
+    #expect(abs(point.longitude - 0.01) < 1e-9)
+    #expect(RouteSplitter.point(on: line, at: 0) == line[0])
+}
