@@ -90,7 +90,7 @@ Tests: recordedSourceReturnsFramesUpToTheReplayTime, engineBuildsThirtyMinutesAr
 - [ ] Every error situation provoked in the simulator without a crash
 - [ ] VoiceOver, largest Dynamic Type and dark mode checked on every screen (screenshots in CI, Inspector at the Mac)
 - [ ] Zero compiler warnings, no print, final README
-- [ ] Backup demo video recorded
+- [ ] Live demo rehearsed (about 3 min, replay mode)
 - [ ] Live code changes rehearsed
 Tests: serverErrorBecomesARetryLaterMessage, tooManyRequestsIsRateLimited, unreadableBodyIsAnInvalidResponse, noConnectionIsOffline, cancellationIsNotReportedAsAnError
 
@@ -113,6 +113,6 @@ Tests: findsTheDriestDayOfTheWeek, bundlesTheWholeRainyDay, scoresEachLeadTimeAn
 - [x] 2026-10-14 · Mac 2 · Real services, Plan and Results screens, tag mvp
 - [ ] 2026-10-21 · Mac 3 · Nowcast service, advice card, collision view
 - [ ] 2026-10-23 · End of classes
-- [ ] 2026-10-28 · Mac 4 (to confirm) · Notification, About, error table, accessibility, demo video
+- [ ] 2026-10-28 · Mac 4 (to confirm) · Notification, About, error table, accessibility, demo rehearsal
 - [ ] 2026-11-02 · Demo window opens · interviews until 13 Nov
 - [ ] 2026-11-04 · Mac 5 (to confirm) · Rehearsal, fixes, bonus

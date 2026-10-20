@@ -676,7 +676,7 @@ Les étapes 1 et 5 (marquées Linux) se font entièrement chez toi : elles avanc
 | Mac 1 | 7 oct. | Projet Xcode + package, go/no-go, modèles SwiftData, bibliothèque de courses | Les courses persistent après relancement |
 | Mac 2 | 14 oct. | Services réels, Planifier, Résultats ; puis courbe et carte s'il reste du temps | Tag `mvp` |
 | Mac 3 | 21 oct. | `FrameDecoder`, `NowcastService`, carte conseil, collision view (ou `Canvas`) | M2 et M3 du HD1 en rejeu |
-| Mac 4 (à confirmer) | 28 oct. | Notification, À propos, tableau des erreurs, accessibilité, vidéo de secours | Tableau de l'étape 7 entièrement vérifié |
+| Mac 4 (à confirmer) | 28 oct. | Notification, À propos, tableau des erreurs, accessibilité, répétition de la démo | Tableau de l'étape 7 entièrement vérifié |
 | Mac 5 (à confirmer) | 4 nov. | Répétition, corrections, bonus | Démo fluide en 5 min |
 
 **Si les Mac 4 et 5 ne sont pas accessibles :** la page À propos et le tableau des erreurs passent en fin de Mac 3, et la collision view part directement en version `Canvas`. Décide-le dès la réponse de Jason, pas le 21 au soir.
@@ -715,7 +715,7 @@ Le sujet prévoit qu'on te demande de modifier ton code en direct. Entraîne-toi
 - [ ] ajouter un champ à `SavedErrand` (ex. une note) et l'afficher dans le formulaire ;
 - [ ] étendre le curseur à ±45 min.
 
-**Filet de sécurité :** un enregistrement vidéo de la démo dans le simulateur (File ▸ Record Screen), fait au dernier mercredi disponible.
+**La démo se fait en direct** pendant l'entretien : pas de vidéo. Le mode replay la rend indépendante du réseau et de la météo du jour.
 
 ## 16. Risques et plans B
 

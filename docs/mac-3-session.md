@@ -1,6 +1,6 @@
 # Séance Mac 3 (la dernière) — jeudi 22 octobre 2026
 
-But : vérifier à la main ce que la CI ne peut pas voir, puis enregistrer la vidéo de démo de secours. La séance se termine par le tag `final`.
+But : vérifier à la main ce que la CI ne peut pas voir, puis répéter la démo, qui se fera en direct à l'entretien. La séance se termine par le tag `final`.
 
 Après cette séance, il n'y a plus de Mac. La CI GitHub (`macos-26`) continue de compiler, lancer les tests et faire les captures : une petite correction reste possible, mais elle ne pourra plus être vérifiée à la main.
 
@@ -9,7 +9,6 @@ Après cette séance, il n'y a plus de Mac. La CI GitHub (`macos-26`) continue d
 - [ ] Pousser sur GitHub, puis `./ww status` : CI *Apple* verte. `./ww screenshots` pour voir les cartes et le formulaire.
 - [ ] Pousser sur GitLab.
 - [ ] Relire « Ce qui a changé » ci-dessous, puis les sections « Les tracés », « Les notifications » et « Apple Intelligence » de `docs/explication-du-code.md`.
-- [ ] Prendre une clé USB (ou prévoir AirDrop) pour emporter la vidéo.
 
 ## Ce qui a changé depuis le Mac 2
 
@@ -80,7 +79,7 @@ Terminé quand : aucun plantage, et chaque message est noté.
 
 Terminé quand : aucun problème bloquant, ou chaque problème est noté (écran, élément).
 
-**9. Vidéo de démo de secours** (replay activé). Simulateur ▸ File ▸ Record Screen. Environ 3 min, dans cet ordre :
+**9. Répétition de la démo en direct** (replay activé). Environ 3 min, chronométrées, dans cet ordre :
 1. Errands ▸ « Describe It » ;
 2. Plan, 3 courses ▸ Calculate ;
 3. Results : toucher le graphe, la carte change, puis *Compare the Next 7 Days* ;
@@ -88,7 +87,7 @@ Terminé quand : aucun problème bloquant, ou chaque problème est noté (écran
 5. Next Walk : conseil, curseur, Map puis Radar Grid ;
 6. About ▸ précision du nowcast.
 
-Terminé quand : le fichier `.mov` est sur ta clé ou ton téléphone, pas seulement sur le Mac du lab.
+Terminé quand : les 6 points passent d'un trait en moins de 3 min, sans hésiter sur un bouton.
 
 **10. Modification en direct.** Faire une ligne du tableau §9 de `docs/explication-du-code.md` (par exemple des départs toutes les 10 min), ⌘R, puis `git checkout .` pour annuler.
 
@@ -109,5 +108,5 @@ Noter l'écran, l'action et le message exact, et faire une capture (⌘S dans le
 
 ## Questions pour Jason
 
-- L'entretien (2–13 nov.) se fait-il sur un Mac du lab ? Sinon, la vidéo de secours suffit-elle pour la démo ?
+- L'entretien (2–13 nov.) se fait-il sur un Mac du lab ? Sinon, sur quelle machine faire la démo en direct ?
 - Faut-il modifier le code en direct pendant l'entretien, et sur quelle machine ?
