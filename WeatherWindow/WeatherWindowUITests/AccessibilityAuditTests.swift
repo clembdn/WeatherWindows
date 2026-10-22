@@ -65,8 +65,8 @@ nonisolated final class AccessibilityAuditTests: XCTestCase {
         if issue.auditType == .contrast, issue.element == nil {
             return "no element: system chrome such as the Liquid Glass tab bar, check with Accessibility Inspector"
         }
-        if issue.auditType == .dynamicType, [.staticText, .switch, .other].contains(issue.element?.elementType) {
-            return "system section headers and toggles scale, see largest-text screenshots"
+        if issue.auditType == .dynamicType, [.staticText, .switch, .other, nil].contains(issue.element?.elementType) {
+            return "system section headers, toggles and rows scale, see largest-text screenshots"
         }
         return nil
     }
