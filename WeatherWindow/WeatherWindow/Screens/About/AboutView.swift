@@ -42,13 +42,17 @@ struct AboutView: View {
 
                 Section {
                     LabeledContent("Walking pace", value: paceFactor.formatted(.number.precision(.fractionLength(2))) + "×")
-                    Slider(value: $paceFactor, in: 0.8...1.3, step: 0.05) {
-                        Text("Walking pace")
-                    } minimumValueLabel: {
+                    HStack {
                         Text("Faster")
-                    } maximumValueLabel: {
+                            .accessibilityHidden(true)
+                        Slider(value: $paceFactor, in: 0.8...1.3, step: 0.05) {
+                            Text("Walking pace")
+                        }
+                        .accessibilityValue(paceFactor.formatted(.number.precision(.fractionLength(2))) + "×, left is faster, right is slower")
                         Text("Slower")
+                            .accessibilityHidden(true)
                     }
+                    .font(.footnote)
                 } header: {
                     Text("Settings")
                 } footer: {

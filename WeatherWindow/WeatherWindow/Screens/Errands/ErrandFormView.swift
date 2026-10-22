@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import FoundationModels
 
 struct ErrandFormView: View {
     let errand: SavedErrand?
@@ -165,8 +166,19 @@ private struct DescribeErrandSection: View {
                     model.fill(name: draft.name, durationMinutes: draft.durationMinutes,
                                openingHour: draft.openingHour, closingHour: draft.closingHour)
                     placeQuery = draft.placeQuery
+                } catch let error as LanguageModelSession.GenerationError {
+                    errorMessage = switch error {
+                    case .assetsUnavailable:
+                        "Apple Intelligence is still downloading. The form was filled from the numbers in your sentence."
+                    case .unsupportedLanguageOrLocale:
+                        "Apple Intelligence doesn't support this language. The form was filled from the numbers in your sentence."
+                    case .guardrailViolation, .refusal:
+                        "Apple Intelligence couldn't read this sentence. The form was filled from the numbers in it."
+                    default:
+                        "Apple Intelligence is unavailable right now. The form was filled from the numbers in your sentence."
+                    }
                 } catch {
-                    errorMessage = "Apple Intelligence failed: \(error.localizedDescription)"
+                    errorMessage = "Apple Intelligence is unavailable right now. The form was filled from the numbers in your sentence."
                 }
             }
             let search = PlaceSearchService()

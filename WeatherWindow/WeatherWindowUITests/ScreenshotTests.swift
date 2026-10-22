@@ -35,7 +35,7 @@ nonisolated final class ScreenshotTests: XCTestCase {
     func testLandscape() {
         XCUIDevice.shared.appearance = .light
         let app = XCUIApplication()
-        app.launchArguments = ["--sample-data", "-replayMode", "YES"]
+        app.launchArguments = ["--sample-data", "-replayMode", "YES", "-startsAtPlace", "NO"]
         app.launch()
         rotateToLandscape()
 
@@ -53,7 +53,7 @@ nonisolated final class ScreenshotTests: XCTestCase {
     func testLandscapePlanFlow() {
         XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication()
-        app.launchArguments = ["--sample-data", "-replayMode", "YES", "--dark"]
+        app.launchArguments = ["--sample-data", "-replayMode", "YES", "-startsAtPlace", "NO", "--dark"]
         app.launch()
 
         openResults(app)
@@ -81,7 +81,7 @@ nonisolated final class ScreenshotTests: XCTestCase {
     func testLandscapeMaps() {
         XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication()
-        app.launchArguments = ["--sample-data", "-replayMode", "YES", "--dark"]
+        app.launchArguments = ["--sample-data", "-replayMode", "YES", "-startsAtPlace", "NO", "--dark"]
         app.launch()
 
         openResults(app)
@@ -141,7 +141,7 @@ nonisolated final class ScreenshotTests: XCTestCase {
         XCUIDevice.shared.appearance = .light
         XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication()
-        app.launchArguments = ["--sample-data", "-replayMode", "YES", "-appearance", "dark"]
+        app.launchArguments = ["--sample-data", "-replayMode", "YES", "-startsAtPlace", "NO", "-appearance", "dark"]
         app.launch()
 
         tap(app.tabBars.buttons["About"])
@@ -185,7 +185,7 @@ nonisolated final class ScreenshotTests: XCTestCase {
         XCUIDevice.shared.appearance = appearance
         XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication()
-        app.launchArguments = ["--sample-data", "-replayMode", "YES"] + arguments
+        app.launchArguments = ["--sample-data", "-replayMode", "YES", "-startsAtPlace", "NO"] + arguments
         app.launch()
 
         capture(app, "\(prefix)-1-plan")
