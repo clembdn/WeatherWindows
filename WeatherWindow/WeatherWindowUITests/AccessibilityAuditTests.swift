@@ -15,6 +15,8 @@ nonisolated final class AccessibilityAuditTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--sample-data", "-replayMode", "YES"]
         app.launch()
+        XCTAssertTrue(app.tabBars.buttons["Errands"].waitForExistence(timeout: 30), "Plan screen never appeared")
+        Thread.sleep(forTimeInterval: 5)
 
         var failures: [String] = []
         var report: [String] = []
