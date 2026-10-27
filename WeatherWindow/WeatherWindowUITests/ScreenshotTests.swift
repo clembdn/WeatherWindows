@@ -150,6 +150,24 @@ nonisolated final class ScreenshotTests: XCTestCase {
     }
 
     @MainActor
+    func testAboutPage() {
+        XCUIDevice.shared.appearance = .light
+        XCUIDevice.shared.orientation = .portrait
+        let app = XCUIApplication()
+        app.launchArguments = ["--sample-data", "-replayMode", "YES", "-startsAtPlace", "NO"]
+        app.launch()
+
+        tap(app.tabBars.buttons["About"])
+        capture(app, "about-1")
+        for page in 2...5 {
+            app.swipeUp(velocity: .slow)
+            Thread.sleep(forTimeInterval: 1)
+            capture(app, "about-\(page)")
+        }
+        app.terminate()
+    }
+
+    @MainActor
     private func rotateToLandscape() {
         XCUIDevice.shared.orientation = .landscapeLeft
         Thread.sleep(forTimeInterval: 2)
