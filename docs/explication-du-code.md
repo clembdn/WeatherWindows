@@ -218,7 +218,7 @@ flowchart LR
 | **Screens/About/** | |
 | `AboutView` | Identité, crédits, méthodes, réglages (dont le thème Système / Clair / Sombre) |
 | `VerificationView` / `VerificationViewModel` | Précision du nowcast, graphe, scores enregistrés |
-| `DebugView` | Les 20 temps de marche et les 48 h de prévision |
+| `DebugView` | Les 20 temps de marche et les 7 jours de prévision |
 | **Screens/Common/** `SharedViews` | `RainBadge`, `ConfidenceBadge`, `ErrorRow`, `ReplayBanner`… |
 | **Database/** | Modèles SwiftData, `ErrandStore`, `SampleData` (4 courses de démo) |
 | **Services/** | |
