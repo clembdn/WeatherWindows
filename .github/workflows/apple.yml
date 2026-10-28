@@ -16,7 +16,7 @@ concurrency:
 
 env:
   XCODE_VERSION: "26.6"
-  SIMULATOR: "platform=iOS Simulator,name=iPhone 17,OS=latest"
+  SIMULATOR_NAME: "iPhone 17"
 
 jobs:
   build:
@@ -32,12 +32,36 @@ jobs:
           xcodebuild -version
           swift --version
 
+      # The runner sometimes lists no simulator for a minute after Xcode is selected: wait for one,
+      # prefer SIMULATOR_NAME, and download the iOS platform only if none ever appears.
+      - name: Pick an iPhone simulator
+        run: |
+          find_iphone() {
+            xcrun simctl list devices available -j | jq -r --arg name "$SIMULATOR_NAME" '
+              [.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))]
+              | (map(select(.name == $name)) + .) | first | .udid // empty'
+          }
+          udid=""
+          for attempt in 1 2 3 4 5 6; do
+            udid=$(find_iphone)
+            [ -n "$udid" ] && break
+            echo "No iPhone simulator yet (attempt $attempt), waiting 20 s"
+            sleep 20
+          done
+          if [ -z "$udid" ]; then
+            xcodebuild -downloadPlatform iOS
+            udid=$(find_iphone)
+          fi
+          [ -n "$udid" ] || { xcrun simctl list; exit 1; }
+          xcrun simctl list devices available | grep -F "$udid"
+          echo "DESTINATION=platform=iOS Simulator,id=$udid" >> "$GITHUB_ENV"
+
       - name: Build and test the app
         run: |
           xcodebuild test \
             -project WeatherWindow/WeatherWindow.xcodeproj \
             -scheme WeatherWindow \
-            -destination "$SIMULATOR" \
+            -destination "$DESTINATION" \
             -parallel-testing-enabled NO \
             -resultBundlePath "$RUNNER_TEMP/app.xcresult" \
             CODE_SIGNING_ALLOWED=NO
