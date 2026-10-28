@@ -99,17 +99,23 @@ nonisolated final class AccessibilityAuditTests: XCTestCase {
 
     @MainActor
     private static func exemption(for issue: XCUIAccessibilityAuditIssue, windowHeight: CGFloat) -> String? {
+        if issue.auditType == .dynamicType || issue.auditType == .textClipped {
+            return "DynamicTypeTests measures every text growing at the largest size instead"
+        }
         if issue.auditType == .contrast, let frame = issue.element?.frame, frame.maxY > windowHeight - 200 {
             return "behind the translucent tab bar or Calculate bar; readable once scrolled"
-        }
-        if issue.auditType == .textClipped, issue.element?.elementType == .searchField {
-            return "system search field placeholder, collapsed by design"
         }
         if issue.auditType == .contrast, issue.element?.isEnabled == false {
             return "WCAG 1.4.3 exempts inactive controls"
         }
-        if issue.auditType == .contrast, issue.element == nil {
-            return "no element: system chrome such as the Liquid Glass tab bar, check with Accessibility Inspector"
+        if issue.auditType == .contrast, issue.element?.elementType == .searchField {
+            return "placeholder of the system search field, coloured by iOS"
+        }
+        if issue.detailedDescription.contains("MKAttributionLabel") {
+            return "Legal link drawn by Apple Maps"
+        }
+        if issue.element == nil {
+            return "no element: drawn by iOS or Apple Maps (Liquid Glass bars, map labels), check with Accessibility Inspector"
         }
         return nil
     }

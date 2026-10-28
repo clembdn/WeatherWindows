@@ -32,7 +32,7 @@ nonisolated final class DynamicTypeTests: XCTestCase {
             }
         }
         for line in report {
-            print("DYNAMIC TYPE \(line)")
+            XCTContext.runActivity(named: "Dynamic Type · \(line)") { _ in }
         }
         let attachment = XCTAttachment(string: report.joined(separator: "\n"))
         attachment.name = "dynamic-type-report"
@@ -52,7 +52,7 @@ nonisolated final class DynamicTypeTests: XCTestCase {
         var heights: [String: CGFloat] = [:]
 
         tap(app.tabBars.buttons["Plan"], in: app)
-        for name in ["Post Office", "Coles", "Library"] {
+        for name in ["Coles", "Library", "Post Office"] {
             tap(app.buttons["errand-\(name)"], in: app)
         }
         app.buttons["calculate"].tap()
@@ -170,7 +170,7 @@ nonisolated final class DynamicTypeTests: XCTestCase {
         var part = 0
         while start < text.endIndex {
             let end = text.index(start, offsetBy: 2000, limitedBy: text.endIndex) ?? text.endIndex
-            print("THUMB \(name) \(part) \(text[start..<end])")
+            XCTContext.runActivity(named: "THUMB \(name) \(part) \(text[start..<end])") { _ in }
             start = end
             part += 1
         }
