@@ -43,12 +43,13 @@ struct NextWalkView: View {
                     Toggle("Alert Me If Rain Is Coming", isOn: $model.alertsWhenRainComes)
                 } footer: {
                     Text("While this screen is open, the radar is checked every 10 minutes and you get a notification when rain heads for your next walk.")
+                        .foregroundStyle(.secondaryText)
                 }
 
                 if let notice = result.radarNotice {
                     Section {
                         Label(notice, systemImage: "exclamationmark.triangle")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.secondaryText)
                     }
                 }
 
@@ -65,8 +66,10 @@ struct NextWalkView: View {
                         TimeSlider(minuteOffset: $model.minuteOffset, now: result.now, lastObservation: nowcast.lastObservation)
                     } header: {
                         Text("Rain and Your Route")
+                            .foregroundStyle(.secondaryText)
                     } footer: {
                         Text("Left of now: radar images. Right of now: extrapolated rain, paler as it gets less certain. Orange dot: you. The radar grid also works offline.")
+                            .foregroundStyle(.secondaryText)
                     }
                 }
             }

@@ -36,6 +36,7 @@ struct ErrandListView: View {
                     } actions: {
                         Button("Add Errand") { isAddingErrand = true }
                             .buttonStyle(.borderedProminent)
+                            .tint(.buttonBlue)
                     }
                 } else {
                     List {
@@ -87,11 +88,11 @@ private struct ErrandRow: View {
                 .font(.headline)
             Text(errand.placeName)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.secondaryText)
             Label("\(errand.durationMinutes) min · open \(Melbourne.time(minute: errand.openingMinute))–\(Melbourne.time(minute: errand.closingMinute))",
                   systemImage: "clock")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.secondaryText)
         }
         .accessibilityElement(children: .combine)
     }

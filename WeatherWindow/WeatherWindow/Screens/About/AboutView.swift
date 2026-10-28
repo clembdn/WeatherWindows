@@ -28,16 +28,19 @@ struct AboutView: View {
                         Text("WeatherWindow")
                             .font(.title2.bold())
                         Text("Version \(version)")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.secondaryText)
                         Text("WeatherWindow picks the order and departure time of your errands so the walks between them stay as dry as possible. It uses the hourly forecast, and the rain radar extrapolated along your route for the next 30 minutes.")
                     }
                     .padding(.vertical, 4)
                 }
 
-                Section("Author") {
+                Section {
                     LabeledContent("Name", value: "Clement Boudon")
                     LabeledContent("Student ID", value: "37465848")
                     Text("FIT3178 iOS App Development, Monash University, Semester 2 2026")
+                } header: {
+                    Text("Author")
+                        .foregroundStyle(.secondaryText)
                 }
 
                 Section {
@@ -53,8 +56,10 @@ struct AboutView: View {
                     .font(.footnote)
                 } header: {
                     Text("Settings")
+                        .foregroundStyle(.secondaryText)
                 } footer: {
                     Text("Apple Maps assumes a fixed walking speed. Move right if you usually walk slower.")
+                        .foregroundStyle(.secondaryText)
                 }
 
                 Section {
@@ -65,18 +70,21 @@ struct AboutView: View {
                     }
                 } footer: {
                     Text("System follows the light or dark mode of the iPhone.")
+                        .foregroundStyle(.secondaryText)
                 }
 
                 Section {
                     Toggle("Use the 40-run ensemble forecast", isOn: $usesEnsemble)
                 } footer: {
                     Text("Scores plans against five runs of the Open-Meteo ensemble, from the driest to the wettest, instead of shifting one forecast 15 and 30 minutes. Not used in replay mode.")
+                        .foregroundStyle(.secondaryText)
                 }
 
                 Section {
                     Toggle("Replay a recorded rainy morning", isOn: $replayMode)
                 } footer: {
                     Text("Uses the radar and forecast recorded on 3 October 2026 with a frozen clock, and straight-line walking times. Works offline.")
+                        .foregroundStyle(.secondaryText)
                 }
 
                 Section {
@@ -85,15 +93,19 @@ struct AboutView: View {
                     }
                 } footer: {
                     Text("Replays recorded radar images and compares the nowcast with what the radar saw next.")
+                        .foregroundStyle(.secondaryText)
                 }
 
-                Section("Data") {
+                Section {
                     Link("Weather: Open-Meteo (CC BY 4.0)", destination: URL(string: "https://open-meteo.com")!)
                     Link("Radar: RainViewer", destination: URL(string: "https://www.rainviewer.com/api.html")!)
                     Link("Maps and walking times: Apple Maps", destination: URL(string: "https://www.apple.com/maps/")!)
+                } header: {
+                    Text("Data")
+                        .foregroundStyle(.secondaryText)
                 }
 
-                Section("Methods") {
+                Section {
                     Link("Germann & Zawadzki (2002): extrapolating radar echoes",
                          destination: URL(string: "https://doi.org/10.1175/1520-0493(2002)130%3C2859:SDOTPO%3E2.0.CO;2")!)
                     Link("Pulkkinen et al. (2019), pysteps: motion estimation and verification",
@@ -104,18 +116,27 @@ struct AboutView: View {
                          destination: URL(string: "https://doi.org/10.1175/1520-0469(1948)005%3C0165:TDORWS%3E2.0.CO;2")!)
                     Link("Wilks (2019): Critical Success Index and persistence",
                          destination: URL(string: "https://doi.org/10.1016/C2017-0-03921-6")!)
+                } header: {
+                    Text("Methods")
+                        .foregroundStyle(.secondaryText)
                 }
 
-                Section("Course Materials and AI") {
+                Section {
                     Text("Patterns from the FIT3178 labs: navigation and forms (Lab 3), SwiftData and networking (Lab 5), tabs and typed errors (Week 6), MapKit and Core Location (Lab 7), Swift Charts (Lab 9).")
                     Text("No third-party libraries. Radar images are decoded with the system zlib.")
                     Text("Generative AI (Claude, Anthropic) helped design and write parts of the code, tests and documentation. Every file was reviewed, run and can be explained by the author.")
+                } header: {
+                    Text("Course Materials and AI")
+                        .foregroundStyle(.secondaryText)
                 }
 
-                Section("Developer") {
+                Section {
                     NavigationLink("Walking times and forecast") {
                         DebugView()
                     }
+                } header: {
+                    Text("Developer")
+                        .foregroundStyle(.secondaryText)
                 }
             }
             .navigationTitle("About")

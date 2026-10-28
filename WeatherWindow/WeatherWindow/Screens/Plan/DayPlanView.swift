@@ -75,7 +75,7 @@ struct DayPlanView: View {
         Section {
             if errands.isEmpty {
                 Text("Add errands in the Errands tab first.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.secondaryText)
             }
             if !savedPlans.isEmpty {
                 NavigationLink {
@@ -99,7 +99,7 @@ struct DayPlanView: View {
                                 .foregroundStyle(.primary)
                             Text("\(errand.durationMinutes) min · open \(Melbourne.time(minute: errand.openingMinute))–\(Melbourne.time(minute: errand.closingMinute))")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.secondaryText)
                         }
                     }
                 }
@@ -109,13 +109,14 @@ struct DayPlanView: View {
             }
         } header: {
             Text("Errands · \(selectedErrands.count) of \(min(errands.count, DayPlanViewModel.maxErrands))")
+                .foregroundStyle(.secondaryText)
         } footer: {
             ValidationMessage(text: model.selectionMessage)
         }
     }
 
     private var startSection: some View {
-        Section("Start") {
+        Section {
             Picker("Start", selection: $model.startsAtCurrentLocation) {
                 Text("Current Location").tag(true)
                 Text("Choose Place").tag(false)
@@ -133,11 +134,14 @@ struct DayPlanView: View {
             if case .failed(let error) = model.state, error.isLocationError {
                 ErrorRow(error: error) { calculate() }
             }
+        } header: {
+            Text("Start")
+                .foregroundStyle(.secondaryText)
         }
     }
 
     private var endSection: some View {
-        Section("End") {
+        Section {
             Toggle("Return to start", isOn: $model.endsAtStart)
             if !model.endsAtStart {
                 NavigationLink {
@@ -146,6 +150,9 @@ struct DayPlanView: View {
                     PlaceLabel(place: model.endPlace, placeholder: "Choose where you finish")
                 }
             }
+        } header: {
+            Text("End")
+                .foregroundStyle(.secondaryText)
         }
     }
 
@@ -155,11 +162,13 @@ struct DayPlanView: View {
             DatePicker("Latest departure", selection: $model.windowEnd, displayedComponents: .hourAndMinute)
         } header: {
             Text("Departure Window")
+                .foregroundStyle(.secondaryText)
         } footer: {
             if let message = model.windowMessage {
                 ValidationMessage(text: message)
             } else {
                 Text("Every departure in this window is tried, 5 minutes apart.")
+                    .foregroundStyle(.secondaryText)
             }
         }
     }
@@ -179,6 +188,7 @@ struct DayPlanView: View {
             .frame(maxWidth: .infinity, minHeight: 44)
         }
         .buttonStyle(.borderedProminent)
+        .tint(.buttonBlue)
         .disabled(!model.canCalculate(selectedCount: selectedErrands.count))
         .accessibilityIdentifier("calculate")
         .padding(.horizontal)
@@ -188,7 +198,7 @@ struct DayPlanView: View {
 
     @ViewBuilder private var savedPlansSection: some View {
         if !savedPlans.isEmpty {
-            Section("Saved Plans") {
+            Section {
                 ForEach(savedPlans) { plan in
                     NavigationLink {
                         SavedPlanView(plan: plan, data: data)
@@ -197,11 +207,14 @@ struct DayPlanView: View {
                             Text(plan.departure.formatted(date: .abbreviated, time: .shortened))
                             Text(plan.orderedStops.map(\.name).joined(separator: " → "))
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.secondaryText)
                         }
                     }
                 }
                 .onDelete(perform: deletePlans)
+            } header: {
+                Text("Saved Plans")
+                    .foregroundStyle(.secondaryText)
             }
         }
     }

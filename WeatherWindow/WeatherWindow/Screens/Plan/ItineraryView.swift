@@ -39,7 +39,7 @@ struct ItineraryView: View {
                 if let reminderMessage {
                     Text(reminderMessage)
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.secondaryText)
                 }
                 if notifications.isDenied {
                     NotificationSettingsButton()
@@ -51,7 +51,7 @@ struct ItineraryView: View {
                     .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
             }
 
-            Section("Steps") {
+            Section {
                 LabeledContent {
                     Text(Melbourne.time(schedule.departure))
                 } label: {
@@ -70,6 +70,9 @@ struct ItineraryView: View {
                 } label: {
                     Label("Arrive at \(result.end.name)", systemImage: "house")
                 }
+            } header: {
+                Text("Steps")
+                    .foregroundStyle(.secondaryText)
             }
 
             Section {
@@ -79,7 +82,7 @@ struct ItineraryView: View {
             Section {
                 if isSaved {
                     Label("Plan saved", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(.successGreen)
                 } else {
                     Button("Save This Plan", systemImage: "square.and.arrow.down", action: save)
                 }
@@ -150,7 +153,7 @@ private struct VisitRow: View {
                 .font(.headline)
             Text(detail)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.secondaryText)
                 .padding(.leading, 28)
         }
         .accessibilityElement(children: .combine)

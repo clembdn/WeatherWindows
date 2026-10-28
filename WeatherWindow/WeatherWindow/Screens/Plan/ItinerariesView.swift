@@ -41,10 +41,10 @@ struct ItinerariesView: View {
                             .foregroundStyle(.primary)
                         Text("From \(plan.start.name) · to \(plan.end.name)")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.secondaryText)
                         Text("Last done \(plan.departure.formatted(.dateTime.weekday(.wide).day().month()))")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.secondaryText)
                     }
                 }
             }
