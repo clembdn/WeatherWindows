@@ -119,14 +119,14 @@ private struct TimeSlider: View {
         VStack(alignment: .leading) {
             Text(label)
                 .font(.subheadline.monospacedDigit())
-            Slider(value: $minuteOffset, in: -30...30, step: 1) {
-                Text("Time")
-            } minimumValueLabel: {
+            HStack {
                 Text("−30")
-            } maximumValueLabel: {
+                Slider(value: $minuteOffset, in: -30...30, step: 1) {
+                    Text("Time")
+                }
+                .accessibilityValue(label)
                 Text("+30")
             }
-            .accessibilityValue(label)
         }
     }
 }
