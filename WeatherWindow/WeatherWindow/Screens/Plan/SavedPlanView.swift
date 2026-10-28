@@ -32,21 +32,26 @@ struct SavedPlanView: View {
                 }
             } header: {
                 Text("On the Way")
+                    .foregroundStyle(.secondaryText)
             } footer: {
                 Text("Where are you? Check the radar for the next walk.")
+                    .foregroundStyle(.secondaryText)
             }
 
-            Section("Errands") {
+            Section {
                 ForEach(plan.orderedStops) { stop in
                     VStack(alignment: .leading, spacing: 2) {
                         Text("\(stop.rank + 1). \(stop.name)")
                             .font(.headline)
                         Text("\(Melbourne.time(stop.arrival)) – \(Melbourne.time(stop.departure))")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.secondaryText)
                     }
                     .accessibilityElement(children: .combine)
                 }
+            } header: {
+                Text("Errands")
+                    .foregroundStyle(.secondaryText)
             }
         }
         .navigationTitle(plan.departure.formatted(date: .abbreviated, time: .omitted))

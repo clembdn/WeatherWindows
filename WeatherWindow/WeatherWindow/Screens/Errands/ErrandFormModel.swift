@@ -16,7 +16,9 @@ final class ErrandFormModel {
     var durationMinutes = 15
     var opening: Date
     var closing: Date
+    var sentence = ""
     var duplicateNameMessage: String?
+    private var fieldsWhenOpened: Fields?
 
     init(errand: SavedErrand? = nil, day: Date = .now) {
         opening = Melbourne.date(minute: errand?.openingMinute ?? 9 * 60, on: day)
@@ -26,10 +28,30 @@ final class ErrandFormModel {
             place = Place(name: errand.placeName, location: errand.location)
             durationMinutes = errand.durationMinutes
         }
+        fieldsWhenOpened = fields
     }
 
     var openingMinute: Int { Melbourne.minute(of: opening) }
     var closingMinute: Int { Melbourne.minute(of: closing) }
+
+    private struct Fields: Equatable {
+        let name: String
+        let place: Place?
+        let durationMinutes: Int
+        let openingMinute: Int
+        let closingMinute: Int
+        let sentence: String
+    }
+
+    private var fields: Fields {
+        Fields(name: name, place: place, durationMinutes: durationMinutes,
+               openingMinute: openingMinute, closingMinute: closingMinute, sentence: sentence)
+    }
+
+    /// True when Cancel or a swipe down would lose something the user typed or chose.
+    var hasChanges: Bool {
+        fields != fieldsWhenOpened
+    }
 
     private var trimmedName: String {
         name.trimmingCharacters(in: .whitespacesAndNewlines)

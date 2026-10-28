@@ -15,7 +15,7 @@ struct RainBadge: View {
         let isDry = PlanText.isDry(exposure)
         Label(PlanText.rain(exposure), systemImage: isDry ? "sun.max" : "cloud.rain.fill")
             .font(.subheadline.weight(isDry ? .regular : .semibold))
-            .foregroundStyle(isDry ? Color.secondary : Color.blue)
+            .foregroundStyle(isDry ? Color.secondaryText : Color.accentColor)
     }
 }
 
@@ -36,7 +36,7 @@ struct ConfidenceBadge: View {
     var body: some View {
         Label(PlanText.confidence(level), systemImage: icon)
             .font(.subheadline)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.secondaryText)
     }
 }
 
@@ -56,7 +56,7 @@ struct ForecastNotice: View {
     var body: some View {
         Label(text + " Weather: Open-Meteo (CC BY 4.0).", systemImage: "info.circle")
             .font(.footnote)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.secondaryText)
     }
 }
 
@@ -79,7 +79,7 @@ struct ValidationMessage: View {
     var body: some View {
         if let text {
             Label(text, systemImage: "exclamationmark.triangle.fill")
-                .foregroundStyle(.red)
+                .foregroundStyle(.errorRed)
         }
     }
 }
@@ -93,7 +93,7 @@ struct PlaceLabel: View {
             Label(place.name, systemImage: "mappin.and.ellipse")
         } else {
             Text(placeholder)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.secondaryText)
         }
     }
 }
@@ -126,5 +126,18 @@ struct ReplayBanner: View {
             .padding(.vertical, 6)
             .background(Color.orange.opacity(0.25))
             .accessibilityLabel("Replay mode: recorded weather from \(label)")
+    }
+}
+
+/// Segmented controls keep the same text size, so at accessibility text sizes the picker becomes a menu, whose text grows.
+struct AdaptivePickerStyle: ViewModifier {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    func body(content: Content) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            content.pickerStyle(.menu)
+        } else {
+            content.pickerStyle(.segmented)
+        }
     }
 }

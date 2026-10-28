@@ -15,6 +15,7 @@ struct ErrandFormView: View {
     @Environment(ErrandStore.self) private var store
     @State private var model: ErrandFormModel
     @State private var saveErrorMessage: String?
+    @State private var confirmsDiscard = false
 
     init(errand: SavedErrand? = nil) {
         self.errand = errand
@@ -40,6 +41,7 @@ struct ErrandFormView: View {
                         .textInputAutocapitalization(.words)
                 } header: {
                     Text("Errand")
+                        .foregroundStyle(.secondaryText)
                 } footer: {
                     ValidationMessage(text: model.nameMessage)
                 }
@@ -52,6 +54,7 @@ struct ErrandFormView: View {
                     }
                 } header: {
                     Text("Place")
+                        .foregroundStyle(.secondaryText)
                 } footer: {
                     ValidationMessage(text: model.placeMessage)
                 }
@@ -69,20 +72,24 @@ struct ErrandFormView: View {
                     DatePicker("Closes", selection: $model.closing, displayedComponents: .hourAndMinute)
                 } header: {
                     Text("Opening Hours")
+                        .foregroundStyle(.secondaryText)
                 } footer: {
                     ValidationMessage(text: model.hoursMessage)
                 }
 
                 if !plans.isEmpty {
-                    Section("Used in Plans") {
+                    Section {
                         ForEach(plans) { plan in
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(plan.departure.formatted(date: .abbreviated, time: .shortened))
                                 Text(plan.orderedStops.map(\.name).joined(separator: " → "))
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(.secondaryText)
                             }
                         }
+                    } header: {
+                        Text("Used in Plans")
+                            .foregroundStyle(.secondaryText)
                     }
                 }
 
@@ -95,15 +102,28 @@ struct ErrandFormView: View {
             .environment(\.timeZone, Melbourne.timeZone)
             .navigationTitle(errand == nil ? "New Errand" : "Edit Errand")
             .navigationBarTitleDisplayMode(.inline)
+            .interactiveDismissDisabled(model.hasChanges)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel", action: cancel)
+                        .confirmationDialog("Discard your changes?", isPresented: $confirmsDiscard, titleVisibility: .visible) {
+                            Button("Discard Changes", role: .destructive) { dismiss() }
+                            Button("Keep Editing", role: .cancel) {}
+                        }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save)
                         .disabled(!model.canSave)
                 }
             }
+        }
+    }
+
+    private func cancel() {
+        if model.hasChanges {
+            confirmsDiscard = true
+        } else {
+            dismiss()
         }
     }
 
@@ -128,27 +148,29 @@ struct ErrandFormView: View {
 
 @available(iOS 26, *)
 private struct DescribeErrandSection: View {
-    let model: ErrandFormModel
-    @State private var sentence = ""
+    @Bindable var model: ErrandFormModel
     @State private var isFilling = false
     @State private var errorMessage: String?
 
     var body: some View {
         Section {
-            TextField("Post office, 10 min, open 9 to 5", text: $sentence, axis: .vertical)
+            TextField("Post office, 10 min, open 9 to 5", text: $model.sentence, axis: .vertical)
             Button("Fill In the Form", systemImage: "sparkles", action: fillIn)
-                .disabled(sentence.trimmingCharacters(in: .whitespaces).isEmpty || isFilling)
+                .disabled(model.sentence.trimmingCharacters(in: .whitespaces).isEmpty || isFilling)
             if isFilling {
                 ProgressView("Reading your sentence…")
             }
             ValidationMessage(text: errorMessage)
         } header: {
             Text("Describe It")
+                .foregroundStyle(.secondaryText)
         } footer: {
             if ErrandAssistant.isAvailable {
                 Text("Apple Intelligence fills in the form on your iPhone. Check every field before saving.")
+                    .foregroundStyle(.secondaryText)
             } else {
                 Text("Apple Intelligence isn't available, so the form is filled from the numbers in your sentence. Check every field before saving.")
+                    .foregroundStyle(.secondaryText)
             }
         }
     }
@@ -158,11 +180,11 @@ private struct DescribeErrandSection: View {
         errorMessage = nil
         Task {
             defer { isFilling = false }
-            model.fill(fromSentence: sentence)
+            model.fill(fromSentence: model.sentence)
             var placeQuery = model.name
             if ErrandAssistant.isAvailable {
                 do {
-                    let draft = try await ErrandAssistant.draft(from: sentence)
+                    let draft = try await ErrandAssistant.draft(from: model.sentence)
                     model.fill(name: draft.name, durationMinutes: draft.durationMinutes,
                                openingHour: draft.openingHour, closingHour: draft.closingHour)
                     placeQuery = draft.placeQuery

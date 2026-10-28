@@ -56,6 +56,7 @@ struct VerificationView: View {
             } footer: {
                 Text("From each radar image, the nowcast moves the rain along its measured motion, while persistence assumes the rain stays where it is. "
                      + "Both are compared with the image seen 10, 20 and 30 minutes later, within about 46 km of the CBD.")
+                    .foregroundStyle(.secondaryText)
             }
             .disabled(isLoading)
 
@@ -68,13 +69,15 @@ struct VerificationView: View {
                     }
                 } header: {
                     Text(latest.first?.source ?? "Latest Run")
+                        .foregroundStyle(.secondaryText)
                 } footer: {
                     Text("Critical Success Index: places where rain was both predicted and seen, divided by places where it was predicted or seen. 1 is perfect.")
+                        .foregroundStyle(.secondaryText)
                 }
             }
 
             if runs.count > 1 {
-                Section("Earlier Runs") {
+                Section {
                     ForEach(1..<runs.count, id: \.self) { index in
                         let run = runs[index]
                         VStack(alignment: .leading, spacing: 4) {
@@ -82,12 +85,15 @@ struct VerificationView: View {
                                 .font(.headline)
                             Text(run.first?.date.formatted(date: .abbreviated, time: .shortened) ?? "")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.secondaryText)
                             ForEach(run) { score in
                                 ScoreRow(score: score)
                             }
                         }
                     }
+                } header: {
+                    Text("Earlier Runs")
+                        .foregroundStyle(.secondaryText)
                 }
             }
         }
@@ -145,7 +151,7 @@ private struct ScoreRow: View {
                 .font(.subheadline.weight(.semibold))
             Text("Nowcast \(Self.text(score.nowcastCSI)) · Persistence \(Self.text(score.persistenceCSI))")
                 .font(.subheadline.monospacedDigit())
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.secondaryText)
         }
         .accessibilityElement(children: .combine)
     }

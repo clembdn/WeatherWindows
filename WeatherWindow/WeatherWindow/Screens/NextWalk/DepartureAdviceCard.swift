@@ -29,6 +29,7 @@ struct DepartureAdviceCard: View {
                     remind(later.departure)
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(.buttonBlue)
             } else if let now = result.advice.leaveNow {
                 Label("Leave Now", systemImage: "figure.walk.departure")
                     .font(.title2.bold())
@@ -37,15 +38,17 @@ struct DepartureAdviceCard: View {
                      ? "No rain expected on your walks in the next 30 minutes."
                      : "Waiting up to 30 minutes would not keep you drier.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.secondaryText)
             }
 
             if let reminderMessage {
                 Text(reminderMessage)
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.secondaryText)
             }
         }
+        // Every line gets its full height: without it, the largest text sizes cut the walk and rain lines to one line.
+        .fixedSize(horizontal: false, vertical: true)
         .padding(.vertical, 4)
     }
 
@@ -56,7 +59,7 @@ struct DepartureAdviceCard: View {
             if let walk = schedule.walks.first {
                 Text("Next: walk \(PlanText.duration(walk.arrival.timeIntervalSince(walk.departure))) to \(result.name(of: walk.to))")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.secondaryText)
                 RainBadge(exposure: walk.exposureByScenario.max() ?? 0)
             }
         }

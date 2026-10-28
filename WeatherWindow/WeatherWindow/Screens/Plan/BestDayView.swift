@@ -32,6 +32,7 @@ struct BestDayView: View {
                     }
                 } footer: {
                     Text("Same errands and departure window every day. Only the days covered by the forecast are shown, and forecasts get less certain after 3 days.")
+                        .foregroundStyle(.secondaryText)
                 }
             }
         }
@@ -58,11 +59,11 @@ private struct DayRow: View {
                 .font(.headline)
             if let driest = day.result.driest {
                 Text("Leave at \(Melbourne.time(driest.departure)) · back at \(Melbourne.time(driest.returnTime))")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.secondaryText)
                 RainBadge(exposure: driest.robustExposure)
             } else {
                 Text("No plan fits the opening hours.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.secondaryText)
             }
         }
         .accessibilityElement(children: .combine)

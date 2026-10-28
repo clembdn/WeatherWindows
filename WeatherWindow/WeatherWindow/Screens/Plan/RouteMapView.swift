@@ -47,7 +47,7 @@ struct RouteMapView: View {
                 }
             }
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.secondaryText)
         }
         .task(id: schedule.id) {
             lines = []

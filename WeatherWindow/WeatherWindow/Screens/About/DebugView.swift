@@ -42,11 +42,13 @@ struct DebugView: View {
                 }
             } header: {
                 Text("Walking times · start and end at Melbourne CBD")
+                    .foregroundStyle(.secondaryText)
             } footer: {
                 Text("Uses your first four errands. Pace factor \(paceFactor.formatted(.number.precision(.fractionLength(2))))×.")
+                    .foregroundStyle(.secondaryText)
             }
 
-            Section("Hourly forecast · centre of your errands") {
+            Section {
                 switch forecastState {
                 case .idle, .loading:
                     ProgressView("Loading forecast…")
@@ -60,6 +62,9 @@ struct DebugView: View {
                         Task { await loadForecast() }
                     }
                 }
+            } header: {
+                Text("Hourly forecast · centre of your errands")
+                    .foregroundStyle(.secondaryText)
             }
         }
         .navigationTitle("Debug")

@@ -83,6 +83,35 @@ struct ErrandFormModelTests {
         #expect(model.closingMinute == 17 * 60)
     }
 
+    @Test func aNewFormHasChangesOnlyOnceSomethingIsTyped() {
+        let model = ErrandFormModel()
+        #expect(!model.hasChanges)
+
+        model.name = "Library"
+        #expect(model.hasChanges)
+
+        model.name = ""
+        #expect(!model.hasChanges)
+
+        model.sentence = "Post office, 10 min"
+        #expect(model.hasChanges)
+    }
+
+    @Test func editingAnErrandCountsOnlyRealChanges() {
+        let errand = SavedErrand(name: "Library", place: place, durationMinutes: 30, openingMinute: 10 * 60, closingMinute: 18 * 60)
+        let model = ErrandFormModel(errand: errand)
+        #expect(!model.hasChanges)
+
+        model.durationMinutes = 45
+        #expect(model.hasChanges)
+
+        model.durationMinutes = 30
+        #expect(!model.hasChanges)
+
+        model.closing = Melbourne.date(minute: 19 * 60, on: model.opening)
+        #expect(model.hasChanges)
+    }
+
     private func filledModel() -> ErrandFormModel {
         let model = ErrandFormModel()
         model.name = "Library"

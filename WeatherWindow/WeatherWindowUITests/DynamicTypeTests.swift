@@ -1,0 +1,204 @@
+//
+//  DynamicTypeTests.swift
+//  WeatherWindowUITests
+//
+//  Created by Clement Boudon on 28/10/2026.
+//
+
+import XCTest
+
+/// Measures every text on Results, Itinerary and Next Walk at the default size and at the largest
+/// accessibility size: a text whose height doesn't grow ignores Dynamic Type.
+nonisolated final class DynamicTypeTests: XCTestCase {
+    private static let largest = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+
+    @MainActor
+    func testEveryTextGrowsAtTheLargestSize() {
+        let normal = measureTexts(arguments: [], capturesAs: nil)
+        let large = measureTexts(arguments: Self.largest, capturesAs: "largest-text")
+
+        var report: [String] = []
+        var stuck: [String] = []
+        for (key, height) in normal.sorted(by: { $0.key < $1.key }) {
+            guard let largeHeight = large[key] else {
+                report.append("not found at the largest size: \(key)")
+                continue
+            }
+            let line = "\(key): \(Int(height)) → \(Int(largeHeight)) pt"
+            if key.contains(": Replay mode") {
+                report.append(line + " (replay banner, capped at accessibility1 on purpose)")
+                continue
+            }
+            report.append(line)
+            if largeHeight < height * 1.2 {
+                stuck.append(line)
+            }
+        }
+        for line in report {
+            XCTContext.runActivity(named: "Dynamic Type · \(line)") { _ in }
+        }
+        let attachment = XCTAttachment(string: report.joined(separator: "\n"))
+        attachment.name = "dynamic-type-report"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        XCTAssertTrue(stuck.isEmpty, "Text that doesn't grow at the largest size:\n" + stuck.joined(separator: "\n"))
+    }
+
+    /// Text heights by "screen: label", read while scrolling through each screen.
+    @MainActor
+    private func measureTexts(arguments: [String], capturesAs prefix: String?) -> [String: CGFloat] {
+        XCUIDevice.shared.appearance = .light
+        XCUIDevice.shared.orientation = .portrait
+        let app = XCUIApplication()
+        app.launchArguments = ["--sample-data", "-replayMode", "YES", "-startsAtPlace", "NO"] + arguments
+        app.launch()
+        var heights: [String: CGFloat] = [:]
+
+        XCTAssertTrue(app.tabBars.buttons["Plan"].waitForExistence(timeout: 30), "Plan screen never appeared")
+        app.tabBars.buttons["Plan"].tap()
+        for name in ["Coles", "Library", "Post Office"] {
+            tap(app.buttons["errand-\(name)"], in: app)
+        }
+        app.buttons["calculate"].tap()
+        XCTAssertTrue(app.navigationBars["Results"].waitForExistence(timeout: 30), "Results never appeared")
+        Thread.sleep(forTimeInterval: 2)
+        collectTexts("Results", in: app, into: &heights, capturesAs: prefix.map { "\($0)-results" })
+        scrollToTop(app)
+
+        tap(app.buttons["plan-card"].firstMatch, in: app)
+        XCTAssertTrue(app.navigationBars["Itinerary"].waitForExistence(timeout: 10), "Itinerary never appeared")
+        Thread.sleep(forTimeInterval: 2)
+        collectTexts("Itinerary", in: app, into: &heights, capturesAs: prefix.map { "\($0)-itinerary" })
+        scrollToTop(app)
+
+        tap(app.buttons["check-radar"], in: app)
+        XCTAssertTrue(app.navigationBars["Next Walk"].waitForExistence(timeout: 10), "Next Walk never appeared")
+        XCTAssertTrue(app.staticTexts["Checking the radar…"].waitForNonExistence(timeout: 60), "Radar never loaded")
+        Thread.sleep(forTimeInterval: 2)
+        collectTexts("Next Walk", in: app, into: &heights, capturesAs: prefix.map { "\($0)-next-walk" })
+
+        app.terminate()
+        return heights
+    }
+
+    /// Scrolls a page at a time until the screen stops moving, so long screens are measured to the end.
+    @MainActor
+    private func collectTexts(_ screen: String, in app: XCUIApplication, into heights: inout [String: CGFloat],
+                              capturesAs prefix: String?) {
+        var lastPage: [String] = []
+        for page in 1...30 {
+            if let prefix {
+                capture(prefix + "-\(page)")
+            }
+            let texts = visibleTexts(in: app)
+            for (label, frame) in texts where heights["\(screen): \(label)"] == nil {
+                heights["\(screen): \(label)"] = frame.height
+            }
+            let thisPage = positions(of: texts)
+            if thisPage == lastPage {
+                break
+            }
+            lastPage = thisPage
+            scroll(app, down: true)
+        }
+    }
+
+    /// Texts and buttons on screen, outside the navigation and tab bars, which iOS sizes itself.
+    /// A text taller than the screen counts too: its frame keeps its full height.
+    @MainActor
+    private func visibleTexts(in app: XCUIApplication) -> [(label: String, frame: CGRect)] {
+        guard let root = try? app.snapshot() else { return [] }
+        let window = root.frame
+        var found: [(label: String, frame: CGRect)] = []
+        func visit(_ node: XCUIElementSnapshot, inBar: Bool) {
+            let isBar = inBar || node.elementType == .navigationBar || node.elementType == .tabBar
+            let isText = node.elementType == .staticText || node.elementType == .button
+            if !isBar, isText, !node.label.isEmpty, node.frame.height > 0, window.intersects(node.frame) {
+                found.append((label: node.label, frame: node.frame))
+            }
+            for child in node.children {
+                visit(child, inBar: isBar)
+            }
+        }
+        visit(root, inBar: false)
+        return found
+    }
+
+    /// Where each text sits: the same list twice in a row means the scroll reached the end.
+    private func positions(of texts: [(label: String, frame: CGRect)]) -> [String] {
+        texts.map { "\($0.label) \(Int($0.frame.minY))" }
+    }
+
+    /// Drags along the right margin, outside the maps, so the list scrolls instead of the map.
+    /// A small step is a fifth of the screen, so it can stop on any row.
+    @MainActor
+    private func scroll(_ app: XCUIApplication, down: Bool, small: Bool = false) {
+        let top = app.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: small ? 0.4 : 0.3))
+        let bottom = app.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: small ? 0.6 : 0.75))
+        if down {
+            bottom.press(forDuration: 0.05, thenDragTo: top, withVelocity: .default, thenHoldForDuration: 0.1)
+        } else {
+            top.press(forDuration: 0.05, thenDragTo: bottom, withVelocity: .fast, thenHoldForDuration: 0.1)
+        }
+        Thread.sleep(forTimeInterval: 1)
+    }
+
+    @MainActor
+    private func scrollToTop(_ app: XCUIApplication) {
+        var lastPage: [String] = []
+        for _ in 1...30 {
+            scroll(app, down: false)
+            let thisPage = positions(of: visibleTexts(in: app))
+            if thisPage == lastPage {
+                break
+            }
+            lastPage = thisPage
+        }
+    }
+
+    /// Scrolls down until the element can be tapped, since big text pushes it off screen.
+    @MainActor
+    private func tap(_ element: XCUIElement, in app: XCUIApplication) {
+        var steps = 0
+        while !isClearOfBars(element, in: app), steps < 30 {
+            scroll(app, down: true, small: true)
+            steps += 1
+        }
+        XCTAssertTrue(element.waitForExistence(timeout: 10), "\(element) not found")
+        element.tap()
+    }
+
+    /// True when the element's centre is between the navigation bar and the bars at the bottom (Calculate, tab bar).
+    /// At the largest size a row can be "hittable" while its centre sits under the Calculate bar, so a tap would
+    /// press Calculate instead.
+    @MainActor
+    private func isClearOfBars(_ element: XCUIElement, in app: XCUIApplication) -> Bool {
+        guard element.exists, element.isHittable else { return false }
+        let height = app.windows.firstMatch.frame.height
+        var top: CGFloat = 0
+        var bottom = height
+        // Only bars where they should be count: in the top half for the navigation bar, the bottom half for the others.
+        let navigationBar = app.navigationBars.firstMatch
+        if navigationBar.exists, navigationBar.frame.maxY < height / 2 {
+            top = navigationBar.frame.maxY
+        }
+        let tabBar = app.tabBars.firstMatch
+        if tabBar.exists, tabBar.frame.minY > height / 2 {
+            bottom = min(bottom, tabBar.frame.minY)
+        }
+        let calculate = app.buttons["calculate"]
+        if calculate.exists, calculate.frame.minY > height / 2 {
+            bottom = min(bottom, calculate.frame.minY - 20)
+        }
+        let centre = element.frame.midY
+        return centre > top + 20 && centre < bottom - 20
+    }
+
+    @MainActor
+    private func capture(_ name: String) {
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+}

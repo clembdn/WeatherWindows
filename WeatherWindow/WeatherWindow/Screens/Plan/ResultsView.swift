@@ -65,13 +65,15 @@ struct ResultsView: View {
                                 .padding(.vertical, 8)
                         } header: {
                             Text("Time vs Rain")
+                                .foregroundStyle(.secondaryText)
                         } footer: {
                             Text("Each point is a plan that no other plan beats on both time and rain. Tap one to see it.")
+                                .foregroundStyle(.secondaryText)
                         }
                     }
 
                     if let selected {
-                        Section("Selected Plan") {
+                        Section {
                             RouteMapView(result: result, schedule: selected)
                                 .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
                             NavigationLink {
@@ -79,10 +81,13 @@ struct ResultsView: View {
                             } label: {
                                 ScheduleRow(schedule: selected)
                             }
+                        } header: {
+                            Text("Selected Plan")
+                                .foregroundStyle(.secondaryText)
                         }
                     }
 
-                    Section("All Trade-offs") {
+                    Section {
                         ForEach(schedules) { schedule in
                             NavigationLink {
                                 ItineraryView(result: result, schedule: schedule)
@@ -90,6 +95,9 @@ struct ResultsView: View {
                                 ScheduleRow(schedule: schedule)
                             }
                         }
+                    } header: {
+                        Text("All Trade-offs")
+                            .foregroundStyle(.secondaryText)
                     }
                 }
             }
@@ -116,7 +124,7 @@ private struct ScheduleCard: View {
                 Text("Leave at \(Melbourne.time(schedule.departure))")
                     .font(.title3.weight(.semibold))
                 Text("Back at \(Melbourne.time(schedule.returnTime)) · \(PlanText.duration(schedule.returnTime.timeIntervalSince(schedule.departure))) out")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.secondaryText)
                 RainBadge(exposure: schedule.robustExposure)
                 ConfidenceBadge(level: schedule.confidence)
             }
@@ -136,7 +144,7 @@ private struct ScheduleRow: View {
                 .font(.headline)
             Text(schedule.order.map(\.name).joined(separator: " → "))
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.secondaryText)
             RainBadge(exposure: schedule.robustExposure)
         }
         .accessibilityElement(children: .combine)

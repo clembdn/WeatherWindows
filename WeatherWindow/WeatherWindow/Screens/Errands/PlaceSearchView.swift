@@ -23,15 +23,15 @@ struct PlaceSearchView: View {
             }
             if let errorMessage {
                 Label(errorMessage, systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(.red)
+                    .foregroundStyle(.errorRed)
             }
 
             if let message = search.errorMessage {
                 Label(message, systemImage: "wifi.exclamationmark")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.secondaryText)
             } else if search.query.isEmpty {
                 Text("Type a shop, a library or an address in Melbourne.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.secondaryText)
             } else if search.results.isEmpty && search.isSearching {
                 ProgressView("Searching…")
             } else if search.results.isEmpty {
@@ -48,7 +48,7 @@ struct PlaceSearchView: View {
                         if !completion.subtitle.isEmpty {
                             Text(completion.subtitle)
                                 .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.secondaryText)
                         }
                     }
                 }

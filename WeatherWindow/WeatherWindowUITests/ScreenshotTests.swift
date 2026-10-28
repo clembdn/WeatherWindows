@@ -137,6 +137,35 @@ nonisolated final class ScreenshotTests: XCTestCase {
     }
 
     @MainActor
+    func testCancelAsksBeforeDiscardingChanges() {
+        XCUIDevice.shared.appearance = .light
+        XCUIDevice.shared.orientation = .portrait
+        let app = XCUIApplication()
+        app.launchArguments = ["--sample-data", "-replayMode", "YES", "-startsAtPlace", "NO"]
+        app.launch()
+
+        tap(app.tabBars.buttons["Errands"])
+        tap(app.buttons["Add Errand"].firstMatch)
+        let sheet = app.navigationBars["New Errand"]
+        XCTAssertTrue(sheet.waitForExistence(timeout: 30), "New Errand sheet never opened")
+        tap(app.textFields["Name"])
+        app.typeText("Bakery")
+
+        sheet.swipeDown(velocity: .fast)
+        Thread.sleep(forTimeInterval: 2)
+        XCTAssertTrue(sheet.exists, "A swipe down closed the sheet and lost the changes")
+
+        tap(app.buttons["Cancel"])
+        let discard = app.buttons["Discard Changes"]
+        XCTAssertTrue(discard.waitForExistence(timeout: 10), "Cancel didn't ask before discarding the changes")
+        capture(app, "discard-changes")
+        discard.tap()
+        XCTAssertTrue(sheet.waitForNonExistence(timeout: 30), "Discard Changes didn't close the sheet")
+        XCTAssertFalse(app.staticTexts["Bakery"].exists, "The discarded errand was saved")
+        app.terminate()
+    }
+
+    @MainActor
     func testAppearanceSetting() {
         XCUIDevice.shared.appearance = .light
         XCUIDevice.shared.orientation = .portrait
