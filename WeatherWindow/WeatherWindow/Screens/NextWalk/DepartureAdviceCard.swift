@@ -47,6 +47,8 @@ struct DepartureAdviceCard: View {
                     .foregroundStyle(.secondaryText)
             }
         }
+        // Every line gets its full height: without it, the largest text sizes cut the walk and rain lines to one line.
+        .fixedSize(horizontal: false, vertical: true)
         .padding(.vertical, 4)
     }
 

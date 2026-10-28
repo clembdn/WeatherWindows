@@ -112,18 +112,22 @@ struct CollisionView: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        // Solid capsules keep the captions readable over any rain colour. They stop growing at accessibility1 so
+        // they don't cover the map; the time is repeated at full size under the map.
         .overlay(alignment: .topLeading) {
             Text(Melbourne.time(time) + (isPredicted ? " · predicted" : " · observed"))
                 .font(.caption.weight(.semibold))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .padding(6)
-                .background(.regularMaterial, in: Capsule())
+                .background(.background, in: Capsule())
                 .padding(8)
         }
-        .overlay(alignment: .topTrailing) {
+        .overlay(alignment: .bottomTrailing) {
             Text("Radar: RainViewer")
                 .font(.caption2)
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .padding(4)
-                .background(.regularMaterial, in: Capsule())
+                .background(.background, in: Capsule())
                 .padding(6)
         }
         .accessibilityElement()

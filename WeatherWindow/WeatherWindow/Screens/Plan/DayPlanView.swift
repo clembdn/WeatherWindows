@@ -121,7 +121,7 @@ struct DayPlanView: View {
                 Text("Current Location").tag(true)
                 Text("Choose Place").tag(false)
             }
-            .pickerStyle(.segmented)
+            .modifier(AdaptivePickerStyle())
 
             if !model.startsAtCurrentLocation {
                 NavigationLink {

@@ -30,7 +30,7 @@ nonisolated final class AccessibilityAuditTests: XCTestCase {
 
         var failures: [String] = []
         var report: [String] = []
-        func audit(_ screen: String) throws {
+        func auditOnce(_ screen: String) throws {
             try app.performAccessibilityAudit { issue in
                 let element = issue.element.map {
                     "type \($0.elementType.rawValue) “\($0.label)” id “\($0.identifier)” at \($0.frame)"
@@ -43,6 +43,22 @@ nonisolated final class AccessibilityAuditTests: XCTestCase {
                     failures.append(line)
                 }
                 return true
+            }
+        }
+
+        func audit(_ screen: String) throws {
+            for attempt in 1...3 {
+                let reportCount = report.count
+                let failureCount = failures.count
+                do {
+                    try auditOnce(screen)
+                    return
+                } catch let error as NSError where error.code == -56 && attempt < 3 {
+                    // "Audit failed to complete in time": the screen was still busy, so wait and audit it again.
+                    report.removeSubrange(reportCount...)
+                    failures.removeSubrange(failureCount...)
+                    Thread.sleep(forTimeInterval: 5)
+                }
             }
         }
 
@@ -66,6 +82,7 @@ nonisolated final class AccessibilityAuditTests: XCTestCase {
         }
         tap(app.buttons["calculate"])
         XCTAssertTrue(app.navigationBars["Results"].waitForExistence(timeout: 30), "Results never appeared")
+        Thread.sleep(forTimeInterval: 2)
         try audit("Results")
 
         tap(app.buttons["plan-card"].firstMatch)
@@ -102,13 +119,15 @@ nonisolated final class AccessibilityAuditTests: XCTestCase {
         if issue.auditType == .dynamicType || issue.auditType == .textClipped {
             return "DynamicTypeTests measures every text growing at the largest size instead"
         }
-        if issue.auditType == .contrast, let frame = issue.element?.frame, frame.maxY > windowHeight - 200 {
+        // "Contrast failed" and "Contrast nearly passed" both count as contrast issues.
+        let isContrast = issue.auditType == .contrast || issue.compactDescription.hasPrefix("Contrast")
+        if isContrast, let frame = issue.element?.frame, frame.maxY > windowHeight - 200 {
             return "behind the translucent tab bar or Calculate bar; readable once scrolled"
         }
-        if issue.auditType == .contrast, issue.element?.isEnabled == false {
+        if isContrast, issue.element?.isEnabled == false {
             return "WCAG 1.4.3 exempts inactive controls"
         }
-        if issue.auditType == .contrast, issue.element?.elementType == .searchField {
+        if isContrast, issue.element?.elementType == .searchField {
             return "placeholder of the system search field, coloured by iOS"
         }
         if issue.detailedDescription.contains("MKAttributionLabel") {

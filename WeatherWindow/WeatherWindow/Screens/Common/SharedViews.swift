@@ -128,3 +128,16 @@ struct ReplayBanner: View {
             .accessibilityLabel("Replay mode: recorded weather from \(label)")
     }
 }
+
+/// Segmented controls keep the same text size, so at accessibility text sizes the picker becomes a menu, whose text grows.
+struct AdaptivePickerStyle: ViewModifier {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    func body(content: Content) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            content.pickerStyle(.menu)
+        } else {
+            content.pickerStyle(.segmented)
+        }
+    }
+}

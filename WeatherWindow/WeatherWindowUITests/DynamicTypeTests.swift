@@ -26,6 +26,10 @@ nonisolated final class DynamicTypeTests: XCTestCase {
                 continue
             }
             let line = "\(key): \(Int(height)) → \(Int(largeHeight)) pt"
+            if key.contains(": Replay mode") {
+                report.append(line + " (replay banner, capped at accessibility1 on purpose)")
+                continue
+            }
             report.append(line)
             if largeHeight < height * 1.2 {
                 stuck.append(line)
@@ -77,36 +81,40 @@ nonisolated final class DynamicTypeTests: XCTestCase {
         return heights
     }
 
+    /// Scrolls a page at a time until the screen stops moving, so long screens are measured to the end.
     @MainActor
     private func collectTexts(_ screen: String, in app: XCUIApplication, into heights: inout [String: CGFloat],
                               capturesAs prefix: String?) {
-        var count = -1
-        for page in 1...12 {
+        var lastPage: [String] = []
+        for page in 1...30 {
             if let prefix {
                 capture(prefix + "-\(page)")
             }
-            for (label, height) in visibleTexts(in: app) where heights["\(screen): \(label)"] == nil {
-                heights["\(screen): \(label)"] = height
+            let texts = visibleTexts(in: app)
+            for (label, frame) in texts where heights["\(screen): \(label)"] == nil {
+                heights["\(screen): \(label)"] = frame.height
             }
-            if heights.count == count {
+            let thisPage = positions(of: texts)
+            if thisPage == lastPage {
                 break
             }
-            count = heights.count
+            lastPage = thisPage
             scroll(app, down: true)
         }
     }
 
-    /// Texts and buttons fully on screen, outside the navigation and tab bars, which iOS sizes itself.
+    /// Texts and buttons on screen, outside the navigation and tab bars, which iOS sizes itself.
+    /// A text taller than the screen counts too: its frame keeps its full height.
     @MainActor
-    private func visibleTexts(in app: XCUIApplication) -> [(String, CGFloat)] {
+    private func visibleTexts(in app: XCUIApplication) -> [(label: String, frame: CGRect)] {
         guard let root = try? app.snapshot() else { return [] }
         let window = root.frame
-        var found: [(String, CGFloat)] = []
+        var found: [(label: String, frame: CGRect)] = []
         func visit(_ node: XCUIElementSnapshot, inBar: Bool) {
             let isBar = inBar || node.elementType == .navigationBar || node.elementType == .tabBar
             let isText = node.elementType == .staticText || node.elementType == .button
-            if !isBar, isText, !node.label.isEmpty, node.frame.height > 0, window.contains(node.frame) {
-                found.append((node.label, node.frame.height))
+            if !isBar, isText, !node.label.isEmpty, node.frame.height > 0, window.intersects(node.frame) {
+                found.append((label: node.label, frame: node.frame))
             }
             for child in node.children {
                 visit(child, inBar: isBar)
@@ -114,6 +122,11 @@ nonisolated final class DynamicTypeTests: XCTestCase {
         }
         visit(root, inBar: false)
         return found
+    }
+
+    /// Where each text sits: the same list twice in a row means the scroll reached the end.
+    private func positions(of texts: [(label: String, frame: CGRect)]) -> [String] {
+        texts.map { "\($0.label) \(Int($0.frame.minY))" }
     }
 
     /// Drags along the right margin, outside the maps, so the list scrolls instead of the map.
@@ -126,13 +139,19 @@ nonisolated final class DynamicTypeTests: XCTestCase {
         } else {
             top.press(forDuration: 0.05, thenDragTo: bottom, withVelocity: .fast, thenHoldForDuration: 0.1)
         }
-        Thread.sleep(forTimeInterval: 0.5)
+        Thread.sleep(forTimeInterval: 1)
     }
 
     @MainActor
     private func scrollToTop(_ app: XCUIApplication) {
-        for _ in 1...12 {
+        var lastPage: [String] = []
+        for _ in 1...30 {
             scroll(app, down: false)
+            let thisPage = positions(of: visibleTexts(in: app))
+            if thisPage == lastPage {
+                break
+            }
+            lastPage = thisPage
         }
     }
 
