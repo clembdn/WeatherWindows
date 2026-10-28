@@ -55,7 +55,8 @@ nonisolated final class DynamicTypeTests: XCTestCase {
         app.launch()
         var heights: [String: CGFloat] = [:]
 
-        tap(app.tabBars.buttons["Plan"], in: app)
+        XCTAssertTrue(app.tabBars.buttons["Plan"].waitForExistence(timeout: 30), "Plan screen never appeared")
+        app.tabBars.buttons["Plan"].tap()
         for name in ["Coles", "Library", "Post Office"] {
             tap(app.buttons["errand-\(name)"], in: app)
         }
@@ -130,10 +131,11 @@ nonisolated final class DynamicTypeTests: XCTestCase {
     }
 
     /// Drags along the right margin, outside the maps, so the list scrolls instead of the map.
+    /// A small step is a fifth of the screen, so it can stop on any row.
     @MainActor
-    private func scroll(_ app: XCUIApplication, down: Bool) {
-        let top = app.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.3))
-        let bottom = app.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.75))
+    private func scroll(_ app: XCUIApplication, down: Bool, small: Bool = false) {
+        let top = app.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: small ? 0.4 : 0.3))
+        let bottom = app.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: small ? 0.6 : 0.75))
         if down {
             bottom.press(forDuration: 0.05, thenDragTo: top, withVelocity: .default, thenHoldForDuration: 0.1)
         } else {
@@ -158,11 +160,39 @@ nonisolated final class DynamicTypeTests: XCTestCase {
     /// Scrolls down until the element can be tapped, since big text pushes it off screen.
     @MainActor
     private func tap(_ element: XCUIElement, in app: XCUIApplication) {
-        for _ in 1...12 where !(element.exists && element.isHittable) {
-            scroll(app, down: true)
+        var steps = 0
+        while !isClearOfBars(element, in: app), steps < 30 {
+            scroll(app, down: true, small: true)
+            steps += 1
         }
         XCTAssertTrue(element.waitForExistence(timeout: 10), "\(element) not found")
         element.tap()
+    }
+
+    /// True when the element's centre is between the navigation bar and the bars at the bottom (Calculate, tab bar).
+    /// At the largest size a row can be "hittable" while its centre sits under the Calculate bar, so a tap would
+    /// press Calculate instead.
+    @MainActor
+    private func isClearOfBars(_ element: XCUIElement, in app: XCUIApplication) -> Bool {
+        guard element.exists, element.isHittable else { return false }
+        let height = app.windows.firstMatch.frame.height
+        var top: CGFloat = 0
+        var bottom = height
+        // Only bars where they should be count: in the top half for the navigation bar, the bottom half for the others.
+        let navigationBar = app.navigationBars.firstMatch
+        if navigationBar.exists, navigationBar.frame.maxY < height / 2 {
+            top = navigationBar.frame.maxY
+        }
+        let tabBar = app.tabBars.firstMatch
+        if tabBar.exists, tabBar.frame.minY > height / 2 {
+            bottom = min(bottom, tabBar.frame.minY)
+        }
+        let calculate = app.buttons["calculate"]
+        if calculate.exists, calculate.frame.minY > height / 2 {
+            bottom = min(bottom, calculate.frame.minY - 20)
+        }
+        let centre = element.frame.midY
+        return centre > top + 20 && centre < bottom - 20
     }
 
     @MainActor
