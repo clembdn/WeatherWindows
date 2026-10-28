@@ -5,7 +5,6 @@
 //  Created by Clement Boudon on 28/10/2026.
 //
 
-import UIKit
 import XCTest
 
 /// Measures every text on Results, Itinerary and Next Walk at the default size and at the largest
@@ -197,31 +196,9 @@ nonisolated final class DynamicTypeTests: XCTestCase {
 
     @MainActor
     private func capture(_ name: String) {
-        let screenshot = XCUIScreen.main.screenshot()
-        let attachment = XCTAttachment(screenshot: screenshot)
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
-        printThumbnail(screenshot.image, name: name)
-    }
-
-    /// Temporary: prints a small JPEG of the screen in the log, to check the layout without the artifact.
-    @MainActor
-    private func printThumbnail(_ image: UIImage, name: String) {
-        let size = CGSize(width: 300, height: image.size.height * 300 / image.size.width)
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = 1
-        let small = UIGraphicsImageRenderer(size: size, format: format).image { _ in
-            image.draw(in: CGRect(origin: .zero, size: size))
-        }
-        guard let text = small.jpegData(compressionQuality: 0.55)?.base64EncodedString() else { return }
-        var start = text.startIndex
-        var part = 0
-        while start < text.endIndex {
-            let end = text.index(start, offsetBy: 2000, limitedBy: text.endIndex) ?? text.endIndex
-            XCTContext.runActivity(named: "THUMB \(name) \(part) \(text[start..<end])") { _ in }
-            start = end
-            part += 1
-        }
     }
 }

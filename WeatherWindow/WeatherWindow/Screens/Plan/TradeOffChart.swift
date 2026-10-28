@@ -41,5 +41,7 @@ struct TradeOffChart: View {
         .chartXAxisLabel("Minutes until you're back")
         .chartYAxisLabel("Rain, worst case (min)")
         .frame(minHeight: 220)
+        // Labels stop growing at accessibility1 so the points keep room; All Trade-offs shows every plan in full.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 }

@@ -31,7 +31,9 @@ nonisolated final class AccessibilityAuditTests: XCTestCase {
         var failures: [String] = []
         var report: [String] = []
         func auditOnce(_ screen: String) throws {
-            try app.performAccessibilityAudit { issue in
+            // Dynamic Type is measured by DynamicTypeTests instead: on iOS 26 this check flags text that does grow,
+            // and it resizes the text while it runs, which can swallow the next tap.
+            try app.performAccessibilityAudit(for: .all.subtracting([.dynamicType, .textClipped])) { issue in
                 let element = issue.element.map {
                     "type \($0.elementType.rawValue) “\($0.label)” id “\($0.identifier)” at \($0.frame)"
                 } ?? "no element"
@@ -85,8 +87,8 @@ nonisolated final class AccessibilityAuditTests: XCTestCase {
         Thread.sleep(forTimeInterval: 2)
         try audit("Results")
 
-        tap(app.buttons["plan-card"].firstMatch)
-        XCTAssertTrue(app.navigationBars["Itinerary"].waitForExistence(timeout: 10), "Itinerary never appeared")
+        tap(app.buttons["plan-card"].firstMatch, until: app.navigationBars["Itinerary"], timeout: 10)
+        XCTAssertTrue(app.navigationBars["Itinerary"].exists, "Itinerary never appeared")
         try audit("Itinerary")
         app.swipeUp()
         Thread.sleep(forTimeInterval: 1)
@@ -94,8 +96,9 @@ nonisolated final class AccessibilityAuditTests: XCTestCase {
         app.swipeDown()
         Thread.sleep(forTimeInterval: 1)
 
-        tap(app.buttons["check-radar"])
-        XCTAssertTrue(app.descendants(matching: .any)["Rain map"].waitForExistence(timeout: 60), "Radar advice never appeared")
+        let rainMap = app.descendants(matching: .any)["Rain map"]
+        tap(app.buttons["check-radar"], until: rainMap, timeout: 60)
+        XCTAssertTrue(rainMap.exists, "Radar advice never appeared")
         try audit("Next Walk")
         app.swipeUp()
         Thread.sleep(forTimeInterval: 1)
@@ -114,11 +117,17 @@ nonisolated final class AccessibilityAuditTests: XCTestCase {
         element.tap()
     }
 
+    /// Taps a link until its screen appears, at most three times: a tap right after an audit is sometimes lost.
+    @MainActor
+    private func tap(_ link: XCUIElement, until screen: XCUIElement, timeout: TimeInterval) {
+        for _ in 1...3 where !screen.exists {
+            tap(link)
+            _ = screen.waitForExistence(timeout: timeout)
+        }
+    }
+
     @MainActor
     private static func exemption(for issue: XCUIAccessibilityAuditIssue, windowHeight: CGFloat) -> String? {
-        if issue.auditType == .dynamicType || issue.auditType == .textClipped {
-            return "DynamicTypeTests measures every text growing at the largest size instead"
-        }
         // "Contrast failed" and "Contrast nearly passed" both count as contrast issues.
         let isContrast = issue.auditType == .contrast || issue.compactDescription.hasPrefix("Contrast")
         if isContrast, let frame = issue.element?.frame, frame.maxY > windowHeight - 200 {
