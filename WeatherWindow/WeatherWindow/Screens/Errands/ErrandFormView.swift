@@ -116,7 +116,7 @@ struct ErrandFormView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save)
                         .disabled(!model.canSave)
-                        .accessibilityHint(model.canSave ? "" : "Something is missing: each field says what to fix under it.")
+                        .accessibilityHint(model.canSave ? "" : "Saves once the problems written under the fields are fixed.")
                 }
             }
         }
@@ -160,7 +160,7 @@ private struct DescribeErrandSection: View {
             TextField("Post office, 10 min, open 9 to 5", text: $model.sentence, axis: .vertical)
                 // The placeholder is an example, not a name for the field.
                 .accessibilityLabel("Errand description")
-                .accessibilityHint("For example: post office, 10 min, open 9 to 5.")
+                .accessibilityHint("Describes the errand in one sentence, for example: post office, 10 min, open 9 to 5.")
             Button("Fill In the Form", systemImage: "sparkles", action: fillIn)
                 .disabled(model.sentence.trimmingCharacters(in: .whitespaces).isEmpty || isFilling)
                 .accessibilityHint("Fills in the name, place, duration and opening hours from your sentence.")

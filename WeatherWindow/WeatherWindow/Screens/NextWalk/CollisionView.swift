@@ -133,7 +133,7 @@ struct CollisionView: View {
         .accessibilityElement()
         .accessibilityLabel("Rain map")
         .accessibilityValue(accessibilityValue(grid: shownGrid, at: youPixel))
-        .accessibilityHint("Swipe up or down to see the rain 5 minutes later or earlier.")
+        .accessibilityHint("Moves the time 5 minutes later or earlier at each step.")
         .accessibilityAdjustableAction { direction in
             if direction == .increment {
                 minuteOffset = min(30, minuteOffset + 5)

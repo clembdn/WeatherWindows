@@ -52,7 +52,7 @@ struct AboutView: View {
                             Text("Walking pace")
                         }
                         .accessibilityValue(paceFactor.formatted(.number.precision(.fractionLength(2))) + "×")
-                        .accessibilityHint("Swipe up if you walk slower than Apple Maps assumes, down if you walk faster.")
+                        .accessibilityHint("Makes every walk longer when increased, for people who walk slower than Apple Maps assumes.")
                         Text("Slower")
                     }
                     .font(.footnote)
