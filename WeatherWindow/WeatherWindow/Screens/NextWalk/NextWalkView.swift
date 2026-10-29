@@ -97,13 +97,11 @@ struct NextWalkView: View {
 
     private func remind(at date: Date) {
         Task {
-            let message = await notifications.scheduleReminder(
+            reminderMessage = await notifications.scheduleReminder(
                 id: "next-walk-\(model.input.current.name)",
                 at: date,
                 body: "Leave \(model.input.current.name) now for a drier walk."
             )
-            reminderMessage = message
-            Announcer.say(message)
         }
     }
 }

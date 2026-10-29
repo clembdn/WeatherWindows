@@ -143,10 +143,8 @@ struct ErrandFormView: View {
             dismiss()
         case .duplicateName:
             model.showDuplicateName()
-            Announcer.say(model.nameMessage ?? "You already have an errand with this name.")
         case .failed(let error):
             saveErrorMessage = error.localizedDescription
-            Announcer.say("The errand couldn't be saved. \(error.localizedDescription)")
         }
     }
 }
@@ -219,7 +217,6 @@ private struct DescribeErrandSection: View {
             } catch {
                 errorMessage = "“\(placeQuery)” wasn't found. Choose the place below."
             }
-            Announcer.say(errorMessage ?? "The form is filled in. Check every field before saving.")
         }
     }
 }

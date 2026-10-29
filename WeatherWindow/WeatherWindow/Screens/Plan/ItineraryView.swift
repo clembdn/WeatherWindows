@@ -105,13 +105,11 @@ struct ItineraryView: View {
     private func remind() {
         let names = schedule.order.map(\.name).joined(separator: ", ")
         Task {
-            let message = await notifications.scheduleReminder(
+            reminderMessage = await notifications.scheduleReminder(
                 id: "plan-\(schedule.id)",
                 at: schedule.departure,
                 body: "Leave now for \(names). \(PlanText.rain(schedule.robustExposure))."
             )
-            reminderMessage = message
-            Announcer.say(message)
         }
     }
 
@@ -120,12 +118,8 @@ struct ItineraryView: View {
             try result.save(schedule, in: context)
             isSaved = true
             saveErrorMessage = nil
-            // The Save button disappears, so VoiceOver would otherwise say nothing.
-            Announcer.say("Plan saved.")
         } catch {
-            let message = "The plan couldn't be saved. \(error.localizedDescription)"
-            saveErrorMessage = message
-            Announcer.say(message)
+            saveErrorMessage = "The plan couldn't be saved. \(error.localizedDescription)"
         }
     }
 }

@@ -79,9 +79,7 @@ struct PlaceSearchView: View {
                 onSelect(place)
                 dismiss()
             } catch {
-                let message = ServiceError(error).errorDescription ?? "The place couldn't be found."
-                errorMessage = message
-                Announcer.say(message)
+                errorMessage = ServiceError(error).errorDescription
             }
         }
     }

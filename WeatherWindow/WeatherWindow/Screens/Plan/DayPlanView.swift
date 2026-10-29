@@ -230,9 +230,6 @@ struct DayPlanView: View {
             await model.calculate(errands: selectedErrands, data: data)
             if model.result != nil {
                 showsResults = true
-            } else if case .failed(let error) = model.state {
-                // The error row appears further down the form, away from the Calculate button.
-                Announcer.say(error.errorDescription ?? "Something went wrong.")
             }
         }
     }
