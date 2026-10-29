@@ -41,6 +41,7 @@ struct NextWalkView: View {
 
                 Section {
                     Toggle("Alert Me If Rain Is Coming", isOn: $model.alertsWhenRainComes)
+                        .accessibilityHint("Checks the radar every 10 minutes while this screen is open.")
                 } footer: {
                     Text("While this screen is open, the radar is checked every 10 minutes and you get a notification when rain heads for your next walk.")
                         .foregroundStyle(.secondaryText)
@@ -121,11 +122,14 @@ private struct TimeSlider: View {
                 .font(.subheadline.monospacedDigit())
             HStack {
                 Text("−30")
+                    .accessibilityLabel("30 minutes ago")
                 Slider(value: $minuteOffset, in: -30...30, step: 1) {
                     Text("Time")
                 }
                 .accessibilityValue(label)
+                .accessibilityHint("Shows the rain up to 30 minutes before or after now.")
                 Text("+30")
+                    .accessibilityLabel("In 30 minutes")
             }
         }
     }

@@ -63,6 +63,8 @@ struct ErrandFormView: View {
                     Stepper(value: $model.durationMinutes, in: 5...120, step: 5) {
                         LabeledContent("Duration", value: "\(model.durationMinutes) min")
                     }
+                    .accessibilityLabel("Duration")
+                    .accessibilityValue("\(model.durationMinutes) minutes")
                 } footer: {
                     ValidationMessage(text: model.durationMessage)
                 }
@@ -114,6 +116,7 @@ struct ErrandFormView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save)
                         .disabled(!model.canSave)
+                        .accessibilityHint(model.canSave ? "" : "Saves once the problems written under the fields are fixed.")
                 }
             }
         }
@@ -155,8 +158,12 @@ private struct DescribeErrandSection: View {
     var body: some View {
         Section {
             TextField("Post office, 10 min, open 9 to 5", text: $model.sentence, axis: .vertical)
+                // The placeholder is an example, not a name for the field.
+                .accessibilityLabel("Errand description")
+                .accessibilityHint("Describes the errand in one sentence, for example: post office, 10 min, open 9 to 5.")
             Button("Fill In the Form", systemImage: "sparkles", action: fillIn)
                 .disabled(model.sentence.trimmingCharacters(in: .whitespaces).isEmpty || isFilling)
+                .accessibilityHint("Fills in the name, place, duration and opening hours from your sentence.")
             if isFilling {
                 ProgressView("Reading your sentence…")
             }

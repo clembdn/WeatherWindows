@@ -27,6 +27,7 @@ struct AboutView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("WeatherWindow")
                             .font(.title2.bold())
+                            .accessibilityAddTraits(.isHeader)
                         Text("Version \(version)")
                             .foregroundStyle(.secondaryText)
                         Text("WeatherWindow picks the order and departure time of your errands so the walks between them stay as dry as possible. It uses the hourly forecast, and the rain radar extrapolated along your route for the next 30 minutes.")
@@ -51,6 +52,7 @@ struct AboutView: View {
                             Text("Walking pace")
                         }
                         .accessibilityValue(paceFactor.formatted(.number.precision(.fractionLength(2))) + "×")
+                        .accessibilityHint("Makes every walk longer when increased, for people who walk slower than Apple Maps assumes.")
                         Text("Slower")
                     }
                     .font(.footnote)

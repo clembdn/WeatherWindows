@@ -83,6 +83,7 @@ struct DayPlanView: View {
                 } label: {
                     Label("Use a Saved Itinerary", systemImage: "arrow.clockwise")
                 }
+                .accessibilityHint("Selects the errands of a plan you saved before.")
                 .accessibilityIdentifier("use-saved-itinerary")
             }
             ForEach(errands) { errand in
@@ -94,6 +95,8 @@ struct DayPlanView: View {
                         Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                             .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
                             .imageScale(.large)
+                            // The selected trait below says the same thing in words.
+                            .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(errand.name)
                                 .foregroundStyle(.primary)
@@ -105,6 +108,7 @@ struct DayPlanView: View {
                 }
                 .tint(.primary)
                 .accessibilityAddTraits(isSelected ? .isSelected : [])
+                .accessibilityHint(isSelected ? "Removes this errand from the plan." : "Adds this errand to the plan.")
                 .accessibilityIdentifier("errand-\(errand.name)")
             }
         } header: {
@@ -190,6 +194,7 @@ struct DayPlanView: View {
         .buttonStyle(.borderedProminent)
         .tint(.buttonBlue)
         .disabled(!model.canCalculate(selectedCount: selectedErrands.count))
+        .accessibilityHint("Finds the order and departure time with the least rain.")
         .accessibilityIdentifier("calculate")
         .padding(.horizontal)
         .padding(.vertical, 8)

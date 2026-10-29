@@ -25,10 +25,12 @@ struct SavedPlanView: View {
                 NavigationLink("At \(plan.start.name)") {
                     NextWalkView(input: nextWalk(after: nil), data: data)
                 }
+                .accessibilityHint("Checks the radar for your next walk from there.")
                 ForEach(plan.orderedStops) { stop in
                     NavigationLink("At \(stop.name)") {
                         NextWalkView(input: nextWalk(after: stop), data: data)
                     }
+                    .accessibilityHint("Checks the radar for your next walk from there.")
                 }
             } header: {
                 Text("On the Way")

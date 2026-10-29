@@ -19,6 +19,15 @@ enum PlanText {
         return "Up to ~\(max(1, Int(exposure.rounded()))) min of rain"
     }
 
+    /// What VoiceOver reads instead of `rain`: words, not "~" and "min".
+    static func spokenRain(_ exposure: Double) -> String {
+        if isDry(exposure) {
+            return "Dry"
+        }
+        let minutes = max(1, Int(exposure.rounded()))
+        return "Up to about \(minutes) \(minutes == 1 ? "minute" : "minutes") of rain"
+    }
+
     static func confidence(_ level: Int) -> String {
         switch level {
         case 3:
@@ -27,6 +36,18 @@ enum PlanText {
             "Medium confidence · 2/3"
         default:
             "Low confidence · 1/3"
+        }
+    }
+
+    /// What VoiceOver reads instead of `confidence`, which could read "3/3" as a date.
+    static func spokenConfidence(_ level: Int) -> String {
+        switch level {
+        case 3:
+            "High confidence, 3 out of 3"
+        case 2:
+            "Medium confidence, 2 out of 3"
+        default:
+            "Low confidence, 1 out of 3"
         }
     }
 

@@ -32,10 +32,12 @@ struct ItineraryView: View {
                 } label: {
                     Label("Check the Radar Before Leaving", systemImage: "cloud.sun.rain")
                 }
+                .accessibilityHint("Shows the rain radar along your next walk.")
                 .accessibilityIdentifier("check-radar")
                 Button("Remind Me to Leave at \(Melbourne.time(schedule.departure))", systemImage: "bell") {
                     remind()
                 }
+                .accessibilityHint("Sends you a notification at that time.")
                 if let reminderMessage {
                     Text(reminderMessage)
                         .font(.footnote)
@@ -85,6 +87,7 @@ struct ItineraryView: View {
                         .foregroundStyle(.successGreen)
                 } else {
                     Button("Save This Plan", systemImage: "square.and.arrow.down", action: save)
+                        .accessibilityHint("Adds it to Saved Plans on the Plan tab.")
                 }
                 ValidationMessage(text: saveErrorMessage)
             }

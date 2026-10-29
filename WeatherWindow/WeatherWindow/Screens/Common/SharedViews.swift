@@ -16,6 +16,7 @@ struct RainBadge: View {
         Label(PlanText.rain(exposure), systemImage: isDry ? "sun.max" : "cloud.rain.fill")
             .font(.subheadline.weight(isDry ? .regular : .semibold))
             .foregroundStyle(isDry ? Color.secondaryText : Color.accentColor)
+            .accessibilityLabel(PlanText.spokenRain(exposure))
     }
 }
 
@@ -37,6 +38,7 @@ struct ConfidenceBadge: View {
         Label(PlanText.confidence(level), systemImage: icon)
             .font(.subheadline)
             .foregroundStyle(.secondaryText)
+            .accessibilityLabel(PlanText.spokenConfidence(level))
     }
 }
 
