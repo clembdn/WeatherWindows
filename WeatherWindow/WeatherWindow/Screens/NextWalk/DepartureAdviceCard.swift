@@ -17,10 +17,12 @@ struct DepartureAdviceCard: View {
             if let reason = result.advice.noPlanReason {
                 Label("Nothing Fits Any More", systemImage: "clock.badge.xmark")
                     .font(.headline)
+                    .accessibilityAddTraits(.isHeader)
                 Text(PlanText.reason(reason))
             } else if let later = result.advice.bestLater {
                 Label("Wait \(PlanText.duration(result.advice.waitingTime(from: result.now)))", systemImage: "hourglass")
                     .font(.title2.bold())
+                    .accessibilityAddTraits(.isHeader)
                 choice("Leave at \(Melbourne.time(later.departure))", schedule: later)
                 if let now = result.advice.leaveNow {
                     choice("Leave now", schedule: now)
@@ -28,11 +30,13 @@ struct DepartureAdviceCard: View {
                 Button("Remind Me at \(Melbourne.time(later.departure))", systemImage: "bell") {
                     remind(later.departure)
                 }
+                .accessibilityHint("Sends you a notification at that time.")
                 .buttonStyle(.borderedProminent)
                 .tint(.buttonBlue)
             } else if let now = result.advice.leaveNow {
                 Label("Leave Now", systemImage: "figure.walk.departure")
                     .font(.title2.bold())
+                    .accessibilityAddTraits(.isHeader)
                 choice("Leave now", schedule: now)
                 Text(PlanText.isDry(now.robustExposure)
                      ? "No rain expected on your walks in the next 30 minutes."

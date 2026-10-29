@@ -131,6 +131,7 @@ private struct ScheduleCard: View {
             .padding(.vertical, 4)
         }
         .accessibilityElement(children: .combine)
+        .accessibilityHint("Opens the itinerary.")
         .accessibilityIdentifier("plan-card")
     }
 }

@@ -16,6 +16,8 @@ struct TradeOffChart: View {
     var body: some View {
         Chart(schedules) { schedule in
             let isSelected = schedule.id == selectedID
+            // The selected point is shown by its shape and colour, so VoiceOver says it in words.
+            let rain = PlanText.spokenRain(schedule.robustExposure) + (isSelected ? ", selected" : "")
             PointMark(
                 x: .value("Minutes until back", schedule.duration / 60),
                 y: .value("Rain, worst case", schedule.robustExposure)
@@ -30,7 +32,7 @@ struct TradeOffChart: View {
                 }
             }
             .accessibilityLabel("Leave \(Melbourne.time(schedule.departure))")
-            .accessibilityValue("Back \(Melbourne.time(schedule.returnTime)), \(PlanText.rain(schedule.robustExposure))")
+            .accessibilityValue("Back \(Melbourne.time(schedule.returnTime)), \(rain)")
         }
         .chartXSelection(value: $touchedMinutes)
         .onChange(of: touchedMinutes) {

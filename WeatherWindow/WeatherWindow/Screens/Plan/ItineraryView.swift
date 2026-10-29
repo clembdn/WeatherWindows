@@ -32,10 +32,12 @@ struct ItineraryView: View {
                 } label: {
                     Label("Check the Radar Before Leaving", systemImage: "cloud.sun.rain")
                 }
+                .accessibilityHint("Shows the rain radar along your next walk.")
                 .accessibilityIdentifier("check-radar")
                 Button("Remind Me to Leave at \(Melbourne.time(schedule.departure))", systemImage: "bell") {
                     remind()
                 }
+                .accessibilityHint("Sends you a notification at that time.")
                 if let reminderMessage {
                     Text(reminderMessage)
                         .font(.footnote)
@@ -85,6 +87,7 @@ struct ItineraryView: View {
                         .foregroundStyle(.successGreen)
                 } else {
                     Button("Save This Plan", systemImage: "square.and.arrow.down", action: save)
+                        .accessibilityHint("Adds it to Saved Plans on the Plan tab.")
                 }
                 ValidationMessage(text: saveErrorMessage)
             }
@@ -102,11 +105,13 @@ struct ItineraryView: View {
     private func remind() {
         let names = schedule.order.map(\.name).joined(separator: ", ")
         Task {
-            reminderMessage = await notifications.scheduleReminder(
+            let message = await notifications.scheduleReminder(
                 id: "plan-\(schedule.id)",
                 at: schedule.departure,
                 body: "Leave now for \(names). \(PlanText.rain(schedule.robustExposure))."
             )
+            reminderMessage = message
+            Announcer.say(message)
         }
     }
 
@@ -115,8 +120,12 @@ struct ItineraryView: View {
             try result.save(schedule, in: context)
             isSaved = true
             saveErrorMessage = nil
+            // The Save button disappears, so VoiceOver would otherwise say nothing.
+            Announcer.say("Plan saved.")
         } catch {
-            saveErrorMessage = "The plan couldn't be saved. \(error.localizedDescription)"
+            let message = "The plan couldn't be saved. \(error.localizedDescription)"
+            saveErrorMessage = message
+            Announcer.say(message)
         }
     }
 }

@@ -47,6 +47,7 @@ struct ErrandListView: View {
                                 ErrandRow(errand: errand)
                             }
                             .tint(.primary)
+                            .accessibilityHint("Opens the errand to edit it.")
                         }
                         .onDelete(perform: deleteErrands)
                     }

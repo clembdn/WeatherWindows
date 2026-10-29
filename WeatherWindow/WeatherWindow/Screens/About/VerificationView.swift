@@ -42,10 +42,12 @@ struct VerificationView: View {
                 Button("Score the Rainy Day of 3 October", systemImage: "cloud.rain") {
                     score(.recordedDay)
                 }
+                .accessibilityHint("Compares the nowcast with the radar images recorded that day.")
                 if !replayMode {
                     Button("Score the Last 2 Hours", systemImage: "dot.radiowaves.left.and.right") {
                         score(.lastTwoHours)
                     }
+                    .accessibilityHint("Downloads the last 2 hours of radar images and compares the nowcast with them.")
                 }
                 if isLoading {
                     ProgressView(model.progress ?? "Reading the radar images…")

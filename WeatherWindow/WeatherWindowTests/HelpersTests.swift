@@ -55,3 +55,11 @@ import Testing
     #expect(abs(point.longitude - 0.01) < 1e-9)
     #expect(RouteSplitter.point(on: line, at: 0) == line[0])
 }
+
+@Test func readsRainAndConfidenceInWords() {
+    #expect(PlanText.spokenRain(0.2) == "Dry")
+    #expect(PlanText.spokenRain(1.2) == "Up to about 1 minute of rain")
+    #expect(PlanText.spokenRain(3.6) == "Up to about 4 minutes of rain")
+    #expect(PlanText.spokenConfidence(3) == "High confidence, 3 out of 3")
+    #expect(PlanText.spokenConfidence(1) == "Low confidence, 1 out of 3")
+}

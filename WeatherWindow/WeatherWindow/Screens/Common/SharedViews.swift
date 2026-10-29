@@ -5,8 +5,17 @@
 //  Created by Clement Boudon on 12/10/2026.
 //
 
+import Accessibility
 import SwiftUI
 import UIKit
+
+/// Reads a message aloud with VoiceOver, for a result that appears away from the control the user tapped,
+/// such as "Plan saved" replacing the Save button. Does nothing when VoiceOver is off.
+enum Announcer {
+    static func say(_ message: String) {
+        AccessibilityNotification.Announcement(message).post()
+    }
+}
 
 struct RainBadge: View {
     let exposure: Double
@@ -16,6 +25,7 @@ struct RainBadge: View {
         Label(PlanText.rain(exposure), systemImage: isDry ? "sun.max" : "cloud.rain.fill")
             .font(.subheadline.weight(isDry ? .regular : .semibold))
             .foregroundStyle(isDry ? Color.secondaryText : Color.accentColor)
+            .accessibilityLabel(PlanText.spokenRain(exposure))
     }
 }
 
@@ -37,6 +47,7 @@ struct ConfidenceBadge: View {
         Label(PlanText.confidence(level), systemImage: icon)
             .font(.subheadline)
             .foregroundStyle(.secondaryText)
+            .accessibilityLabel(PlanText.spokenConfidence(level))
     }
 }
 
