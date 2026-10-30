@@ -141,6 +141,13 @@ nonisolated final class ScreenshotTests: XCTestCase {
             tap(app.navigationBars["Itinerary"].buttons.matching(NSPredicate(format: "label != 'Share'")).firstMatch)
             XCTAssertTrue(app.navigationBars["Results"].waitForExistence(timeout: 10), "Results never came back")
         }
+        // A new calculation opens Results with the usual choice selected.
+        tap(app.navigationBars["Results"].buttons.firstMatch)
+        tap(app.buttons["calculate"])
+        if !app.navigationBars["Results"].waitForExistence(timeout: 30) {
+            openResults(app)
+        }
+        Thread.sleep(forTimeInterval: 1)
         let usualCard = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Your Usual Choice'")).firstMatch
         scrollUntilVisible(usualCard, in: app, steps: 4, by: 0.1)
         XCTContext.runActivity(named: "Usual choice card shown: \(usualCard.exists)") { _ in }
@@ -150,20 +157,21 @@ nonisolated final class ScreenshotTests: XCTestCase {
         for _ in 0..<20 where !(header.exists && header.frame.minY < app.frame.height * 0.3) {
             scrollList(app, by: 0.1)
         }
-        capture(app, "d4-2-chart-before")
+        capture(app, "d4-2-chart-usual")
 
+        // Selecting the driest point moves the selection away from the usual choice.
         let headerBottom = header.exists ? header.frame.maxY : app.frame.height * 0.3
         let points = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label MATCHES 'Leave [0-9].*'"))
             .allElementsBoundByIndex
             .filter { $0.frame.minY > headerBottom }
-            .sorted { $0.frame.minX < $1.frame.minX }
+            .sorted { $0.frame.midX < $1.frame.midX }
         XCTContext.runActivity(named: "Chart points: \(points.map { $0.label })") { _ in }
         let target: XCUICoordinate
-        if points.count >= 3 {
-            target = points[points.count / 2].coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        if let driest = points.last, points.count >= 3 {
+            target = driest.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         } else {
-            target = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0))
+            target = app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0))
                 .withOffset(CGVector(dx: 0, dy: headerBottom + 120))
         }
         target.press(forDuration: 0.3, thenDragTo: target.withOffset(CGVector(dx: 1, dy: 0)),
