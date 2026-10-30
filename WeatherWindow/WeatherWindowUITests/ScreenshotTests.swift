@@ -120,6 +120,98 @@ nonisolated final class ScreenshotTests: XCTestCase {
     }
 
     @MainActor
+    func testPlanChoiceEvidence() {
+        XCUIDevice.shared.appearance = .light
+        XCUIDevice.shared.orientation = .portrait
+        let app = XCUIApplication()
+        app.launchArguments = ["--sample-data", "-replayMode", "YES", "-startsAtPlace", "NO"]
+        app.launch()
+
+        openResults(app)
+        // Saving the fastest and the driest plan puts the usual choice halfway between them.
+        for card in 0..<2 {
+            tap(app.buttons.matching(identifier: "plan-card").element(boundBy: card))
+            XCTAssertTrue(app.navigationBars["Itinerary"].waitForExistence(timeout: 10), "Itinerary never appeared")
+            let save = app.buttons["Save This Plan"]
+            scrollUntilVisible(save, in: app, steps: 15, by: 0.3)
+            if save.exists {
+                save.tap()
+                _ = app.staticTexts["Plan saved"].waitForExistence(timeout: 10)
+            }
+            tap(app.navigationBars["Itinerary"].buttons.matching(NSPredicate(format: "label != 'Share'")).firstMatch)
+            XCTAssertTrue(app.navigationBars["Results"].waitForExistence(timeout: 10), "Results never came back")
+        }
+        let usualCard = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Your Usual Choice'")).firstMatch
+        scrollUntilVisible(usualCard, in: app, steps: 4, by: 0.1)
+        XCTContext.runActivity(named: "Usual choice card shown: \(usualCard.exists)") { _ in }
+        capture(app, "d4-1-usual-choice")
+
+        let header = app.staticTexts.matching(NSPredicate(format: "label ==[c] 'Time vs Rain'")).firstMatch
+        for _ in 0..<20 where !(header.exists && header.frame.minY < app.frame.height * 0.3) {
+            scrollList(app, by: 0.1)
+        }
+        capture(app, "d4-2-chart-before")
+
+        let headerBottom = header.exists ? header.frame.maxY : app.frame.height * 0.3
+        let points = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label MATCHES 'Leave [0-9].*'"))
+            .allElementsBoundByIndex
+            .filter { $0.frame.minY > headerBottom }
+            .sorted { $0.frame.minX < $1.frame.minX }
+        XCTContext.runActivity(named: "Chart points: \(points.map { $0.label })") { _ in }
+        let target: XCUICoordinate
+        if points.count >= 3 {
+            target = points[points.count / 2].coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        } else {
+            target = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0))
+                .withOffset(CGVector(dx: 0, dy: headerBottom + 120))
+        }
+        target.press(forDuration: 0.3, thenDragTo: target.withOffset(CGVector(dx: 1, dy: 0)),
+                     withVelocity: .slow, thenHoldForDuration: 0.5)
+        Thread.sleep(forTimeInterval: 3)
+        capture(app, "d4-3-chart-after")
+
+        for _ in 0..<5 {
+            scrollList(app, by: -0.5)
+        }
+        let compare = app.buttons["Compare the Next 7 Days"]
+        scrollUntilVisible(compare, in: app, steps: 10, by: 0.2)
+        tap(compare)
+        XCTAssertTrue(app.navigationBars["Next 7 Days"].waitForExistence(timeout: 10), "Next 7 Days never appeared")
+        XCTAssertTrue(app.staticTexts["Checking the next 7 days…"].waitForNonExistence(timeout: 30), "Next 7 Days never loaded")
+        capture(app, "d4-4-next-7-days")
+        let driestDay = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Driest Day'")).firstMatch
+        if driestDay.waitForExistence(timeout: 5) {
+            driestDay.tap()
+            _ = app.navigationBars["Results"].waitForExistence(timeout: 30)
+            Thread.sleep(forTimeInterval: 2)
+            capture(app, "d4-5-driest-day")
+        }
+
+        app.terminate()
+    }
+
+    /// Drags along the right margin, outside the maps and the chart, so the list scrolls.
+    /// The fraction is of the screen height; a negative one scrolls back up.
+    @MainActor
+    private func scrollList(_ app: XCUIApplication, by fraction: CGFloat) {
+        let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.5 + fraction / 2))
+        let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.5 - fraction / 2))
+        from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .default, thenHoldForDuration: 0.1)
+        Thread.sleep(forTimeInterval: 1)
+    }
+
+    /// Scrolls down until the element sits above the tab bar, so a tap reaches it.
+    @MainActor
+    private func scrollUntilVisible(_ element: XCUIElement, in app: XCUIApplication, steps: Int, by fraction: CGFloat) {
+        let tabBar = app.tabBars.firstMatch
+        let bottom = tabBar.exists ? tabBar.frame.minY : app.frame.maxY
+        for _ in 0..<steps where !(element.exists && element.isHittable && element.frame.maxY < bottom - 10) {
+            scrollList(app, by: fraction)
+        }
+    }
+
+    @MainActor
     private func drag(_ app: XCUIApplication, by points: CGFloat) {
         let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         let end = start.withOffset(CGVector(dx: 0, dy: points))
