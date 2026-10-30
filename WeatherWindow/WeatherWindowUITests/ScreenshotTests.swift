@@ -120,6 +120,73 @@ nonisolated final class ScreenshotTests: XCTestCase {
     }
 
     @MainActor
+    func testRouteNowcastEvidence() {
+        XCUIDevice.shared.appearance = .light
+        XCUIDevice.shared.orientation = .portrait
+        let app = XCUIApplication()
+        app.launchArguments = ["--sample-data", "-replayMode", "YES", "-startsAtPlace", "NO"]
+        app.launch()
+
+        openResults(app)
+        openItinerary(app)
+        capture(app, "c4-1-itinerary")
+        openNextWalk(app, captureAs: "c4-2-next-walk")
+
+        app.swipeUp()
+        app.swipeUp()
+        Thread.sleep(forTimeInterval: 1)
+        let slider = app.sliders.firstMatch
+        XCTAssertTrue(slider.waitForExistence(timeout: 10), "Time slider not found")
+        for (position, name) in [(0.0, "minus-30"), (0.5, "now"), (0.75, "plus-15"), (1.0, "plus-30")] {
+            slider.adjust(toNormalizedSliderPosition: position)
+            Thread.sleep(forTimeInterval: 2)
+            capture(app, "c4-3-map-\(name)")
+        }
+
+        tap(app.buttons["Radar Grid"])
+        for (position, name) in [(0.0, "minus-30"), (0.75, "plus-15")] {
+            slider.adjust(toNormalizedSliderPosition: position)
+            Thread.sleep(forTimeInterval: 1)
+            capture(app, "c4-4-grid-\(name)")
+        }
+
+        app.swipeDown()
+        app.swipeDown()
+        Thread.sleep(forTimeInterval: 1)
+        let alertToggle = app.switches["Alert Me If Rain Is Coming"]
+        if alertToggle.waitForExistence(timeout: 10) {
+            alertToggle.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+            let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            let allow = springboard.buttons["Allow"]
+            if allow.waitForExistence(timeout: 10) {
+                allow.tap()
+            }
+            Thread.sleep(forTimeInterval: 2)
+            capture(app, "c4-5-rain-alert")
+        }
+
+        tap(app.tabBars.buttons["About"])
+        let accuracyLink = app.buttons["How Accurate Is the Nowcast?"]
+        for _ in 0..<6 where !(accuracyLink.exists && accuracyLink.isHittable) {
+            app.swipeUp()
+        }
+        if accuracyLink.exists && accuracyLink.frame.maxY > app.frame.maxY - 120 {
+            drag(app, by: -150)
+        }
+        tap(accuracyLink)
+        tap(app.buttons["Score the Rainy Day of 3 October"])
+        let scored = app.staticTexts["Rainy day, 3 Oct 2026"].waitForExistence(timeout: 400)
+        Thread.sleep(forTimeInterval: 1)
+        capture(app, "c4-6-accuracy")
+        XCTAssertTrue(scored, "The rainy day was never scored")
+        app.swipeUp()
+        Thread.sleep(forTimeInterval: 1)
+        capture(app, "c4-7-accuracy-scores")
+
+        app.terminate()
+    }
+
+    @MainActor
     private func drag(_ app: XCUIApplication, by points: CGFloat) {
         let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         let end = start.withOffset(CGVector(dx: 0, dy: points))
