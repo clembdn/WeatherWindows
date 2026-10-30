@@ -17,6 +17,7 @@ on:
           - testLargestDynamicType
           - testLandscape
           - testAppearanceSetting
+          - testAboutPage
 
 env:
   XCODE_VERSION: "26.6"
